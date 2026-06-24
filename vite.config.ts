@@ -17,9 +17,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'My Vite App',
-        short_name: 'ViteApp',
-        description: 'My Vite + React PWA',
+        name: 'fe-fastin5',
+        short_name: 'Fastin5',
+        description: 'fe-fastin5 PWA',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
