@@ -2,6 +2,9 @@
 
 A React + TypeScript single-page app built with Vite, with PWA support.
 
+## Features
+- **Video upload** (`/upload`) — a mobile-friendly screen to select a video (tap or drag & drop), preview it, and upload with progress. Accepts MP4/MOV up to 500MB. Implemented as the `VideoUpload` feature component (`src/components/feature/VideoUpload/`) rendered by the `UploadVideo` page (`src/pages/UploadVideo/`). The upload handler is currently mocked — wire `onUpload` to a real API.
+
 ## Getting Started
 
 ### Prerequisites
