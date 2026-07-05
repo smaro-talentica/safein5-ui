@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/protect-env.mjs",
+            "timeout": 10,
+            "statusMessage": "Checking env-file guardrail"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/log-prompt.mjs",
+            "timeout": 10,
+            "statusMessage": "Logging prompt"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/format-and-lint.mjs",
+            "timeout": 120,
+            "statusMessage": "Linting + formatting edited file"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/docs-sync.mjs",
+            "timeout": 15,
+            "statusMessage": "Checking docs are in sync with code"
+          }
+        ]
+      }
+    ]
+  }
+}
