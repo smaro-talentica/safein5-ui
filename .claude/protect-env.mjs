@@ -48,16 +48,39 @@ function isProtectedEnvPath(p) {
   return true;
 }
 
-// Does a shell command touch a protected env file?
-// We look for `.env` tokens in the command and check each against the allowlist.
+// Does a shell command actually operate on a protected env file?
+//
+// The naive approach — match any `.env` substring anywhere in the command —
+// produces false positives: `git commit -m "reword .env docs"` mentions `.env`
+// inside a MESSAGE, not as a file operand, yet would be blocked.
+//
+// Fix: distinguish a `.env` used AS A FILE PATH from a `.env` that is just text
+// inside a quoted string argument. We do this in two passes:
+//   1. Bare (unquoted) tokens — `cat .env`, `.env > x`, `rm .env.prod` — always
+//      scanned; an unquoted `.env` token is being used as a path.
+//   2. Quoted segments — scanned ONLY when the entire quoted content is itself a
+//      path (e.g. `cat ".env.production"`), i.e. no spaces. A quoted string that
+//      contains spaces (a commit message, an echo line) is prose, not a path.
 function commandHitsEnv(cmd) {
   if (!cmd) return null;
-  // Grab every whitespace/quote/redirect-delimited token that contains `.env`.
-  const tokens = String(cmd).match(/[^\s'"`;|&()<>]*\.env[^\s'"`;|&()<>]*/gi) || [];
+  const s = String(cmd);
+
+  // --- pass 2 first: inspect quoted segments, remember them, then blank them out. ---
+  const quoteRe = /(['"`])((?:\\.|(?!\1).)*)\1/g;
+  let m;
+  while ((m = quoteRe.exec(s))) {
+    const inner = m[2];
+    // Only a quote whose whole content is a single path-like token counts as a
+    // file operand. Prose (has whitespace) is ignored.
+    if (!/\s/.test(inner) && isProtectedEnvPath(inner)) return inner;
+  }
+  // Blank out every quoted segment so pass 1 never sees text inside quotes.
+  const bare = s.replace(quoteRe, ' ');
+
+  // --- pass 1: bare tokens, split on shell separators. ---
+  const tokens = bare.match(/[^\s;|&()<>]*\.env[^\s;|&()<>]*/gi) || [];
   for (const tok of tokens) {
-    // Strip surrounding quotes/backticks that slipped in.
-    const clean = tok.replace(/^['"`]+|['"`]+$/g, '');
-    if (isProtectedEnvPath(clean)) return clean;
+    if (isProtectedEnvPath(tok)) return tok;
   }
   return null;
 }
