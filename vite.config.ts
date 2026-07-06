@@ -15,6 +15,11 @@ export default defineConfig(({ command }) => ({
     checker({ typescript: true }),
     VitePWA({
       registerType: 'autoUpdate',
+      // Custom SW (src/sw.ts) so we can add Background Fetch upload handling
+      // on top of Workbox precaching.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['favicon.svg', 'icons.svg'],
       manifest: {
         name: 'Fast in 5',
@@ -44,7 +49,7 @@ export default defineConfig(({ command }) => ({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       },
     }),
