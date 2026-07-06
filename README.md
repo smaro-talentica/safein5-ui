@@ -4,7 +4,7 @@ A React + TypeScript single-page app built with Vite, with PWA support.
 
 ## Features
 
-- **Video upload** (`/upload`) — a mobile-friendly screen to record a short clip in-app or choose one from the gallery, then upload it. Videos are limited to **30 seconds** (configurable) and uploaded **resumably and in the background**:
+- **Video upload** (`/`, also `/upload`) — the app's only screen: a mobile-friendly view to record a short clip in-app or choose one from the gallery, then upload it. Videos are limited to **30 seconds** (configurable) and uploaded **resumably and in the background**:
   - **In-app recording** with a live countdown that hard-stops at the limit (`VideoRecorder`, `src/components/feature/VideoRecorder/`), plus gallery selection with client-side duration validation.
   - **Non-blocking, resumable uploads** via a singleton upload manager (`src/utils/upload/`): the file is split into ~6 MiB parts uploaded directly to S3 (multipart), with per-part retry/backoff so an upload never fails silently.
   - **Survives app close** — upload state and per-part progress are persisted in **IndexedDB** and auto-resume on reopen; on browsers that support the **Background Fetch API** (Chrome/Android) uploads continue while the app is closed. On iOS, uploads resume the next time the app is opened.
