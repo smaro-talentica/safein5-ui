@@ -27,25 +27,25 @@ const TEMPLATE_SUFFIXES = [
   '.defaults',
   '.dist',
   '.local.example', // e.g. .env.local.example — still a template
-];
+]
 
 // Basename looks like an env file: `.env`, `.env.local`, `.env.production`, ...
-const ENV_BASENAME = /^\.env(\.[^/\\]*)?$/i;
+const ENV_BASENAME = /^\.env(\.[^/\\]*)?$/i
 
 function basename(p) {
-  return String(p).split(/[/\\]/).pop() || '';
+  return String(p).split(/[/\\]/).pop() || ''
 }
 
 // Is this path a protected (secret-bearing) env file?
 function isProtectedEnvPath(p) {
-  if (!p) return false;
-  const base = basename(p).toLowerCase();
-  if (!ENV_BASENAME.test(base)) return false;
+  if (!p) return false
+  const base = basename(p).toLowerCase()
+  if (!ENV_BASENAME.test(base)) return false
   // Allow templates through.
   for (const suffix of TEMPLATE_SUFFIXES) {
-    if (base === '.env' + suffix || base.endsWith(suffix)) return false;
+    if (base === '.env' + suffix || base.endsWith(suffix)) return false
   }
-  return true;
+  return true
 }
 
 // Does a shell command actually operate on a protected env file?
@@ -62,27 +62,27 @@ function isProtectedEnvPath(p) {
 //      path (e.g. `cat ".env.production"`), i.e. no spaces. A quoted string that
 //      contains spaces (a commit message, an echo line) is prose, not a path.
 function commandHitsEnv(cmd) {
-  if (!cmd) return null;
-  const s = String(cmd);
+  if (!cmd) return null
+  const s = String(cmd)
 
   // --- pass 2 first: inspect quoted segments, remember them, then blank them out. ---
-  const quoteRe = /(['"`])((?:\\.|(?!\1).)*)\1/g;
-  let m;
+  const quoteRe = /(['"`])((?:\\.|(?!\1).)*)\1/g
+  let m
   while ((m = quoteRe.exec(s))) {
-    const inner = m[2];
+    const inner = m[2]
     // Only a quote whose whole content is a single path-like token counts as a
     // file operand. Prose (has whitespace) is ignored.
-    if (!/\s/.test(inner) && isProtectedEnvPath(inner)) return inner;
+    if (!/\s/.test(inner) && isProtectedEnvPath(inner)) return inner
   }
   // Blank out every quoted segment so pass 1 never sees text inside quotes.
-  const bare = s.replace(quoteRe, ' ');
+  const bare = s.replace(quoteRe, ' ')
 
   // --- pass 1: bare tokens, split on shell separators. ---
-  const tokens = bare.match(/[^\s;|&()<>]*\.env[^\s;|&()<>]*/gi) || [];
+  const tokens = bare.match(/[^\s;|&()<>]*\.env[^\s;|&()<>]*/gi) || []
   for (const tok of tokens) {
-    if (isProtectedEnvPath(tok)) return tok;
+    if (isProtectedEnvPath(tok)) return tok
   }
-  return null;
+  return null
 }
 
 // --- decision helpers -----------------------------------------------------
@@ -95,33 +95,33 @@ function deny(reason) {
         permissionDecision: 'deny',
         permissionDecisionReason: reason,
       },
-    }) + '\n'
-  );
-  process.exit(0);
+    }) + '\n',
+  )
+  process.exit(0)
 }
 
 function allow() {
   // No output + exit 0 => hook does not object; normal permission flow continues.
-  process.exit(0);
+  process.exit(0)
 }
 
 // --- main -----------------------------------------------------------------
 
-let raw = '';
-process.stdin.on('data', (c) => (raw += c));
+let raw = ''
+process.stdin.on('data', (c) => (raw += c))
 process.stdin.on('end', () => {
-  let evt;
+  let evt
   try {
-    evt = JSON.parse(raw);
+    evt = JSON.parse(raw)
   } catch {
     // FAIL CLOSED: unparseable input -> block.
-    deny('env-protector: could not parse hook input; blocking to stay safe.');
-    return;
+    deny('env-protector: could not parse hook input; blocking to stay safe.')
+    return
   }
 
   try {
-    const tool = evt?.tool_name;
-    const input = evt?.tool_input ?? {};
+    const tool = evt?.tool_name
+    const input = evt?.tool_input ?? {}
 
     // Defensive: a file path can live in several fields across tools.
     const candidatePaths = [
@@ -129,34 +129,34 @@ process.stdin.on('end', () => {
       input.path,
       input.filePath,
       input.notebook_path,
-    ].filter((v) => typeof v === 'string' && v);
+    ].filter((v) => typeof v === 'string' && v)
 
     for (const p of candidatePaths) {
       if (isProtectedEnvPath(p)) {
         deny(
           `env-protector: access to secret-bearing env file "${basename(p)}" is blocked. ` +
-            `Use a template (.env.example / .env.sample / .env.template / .env.defaults / .env.dist) instead.`
-        );
-        return;
+            `Use a template (.env.example / .env.sample / .env.template / .env.defaults / .env.dist) instead.`,
+        )
+        return
       }
     }
 
     // Shell tools: scan the command string.
     if (tool === 'Bash' || tool === 'bash') {
-      const cmd = input.command;
-      const hit = commandHitsEnv(cmd);
+      const cmd = input.command
+      const hit = commandHitsEnv(cmd)
       if (hit) {
         deny(
           `env-protector: this command touches the secret-bearing env file "${basename(hit)}" and is blocked. ` +
-            `Read a template instead, or ask the user to share the value directly.`
-        );
-        return;
+            `Read a template instead, or ask the user to share the value directly.`,
+        )
+        return
       }
     }
 
-    allow();
+    allow()
   } catch (err) {
     // FAIL CLOSED: any unexpected error -> block.
-    deny('env-protector: internal error while evaluating the action; blocking to stay safe.');
+    deny('env-protector: internal error while evaluating the action; blocking to stay safe.')
   }
-});
+})
