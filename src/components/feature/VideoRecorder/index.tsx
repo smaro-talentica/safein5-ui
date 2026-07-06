@@ -120,8 +120,8 @@ export function VideoRecorder({ onCapture, onClose, className }: VideoRecorderPr
   const remaining = Math.max(0, maxSec - elapsed)
 
   return (
-    <div className={cn('fixed inset-0 z-[60] flex flex-col bg-black text-white', className)}>
-      <div className="flex items-center justify-between p-4">
+    <div className={cn('fixed inset-0 z-60 flex h-dvh flex-col bg-black text-white', className)}>
+      <div className="flex shrink-0 items-center justify-between p-4">
         <button type="button" onClick={onClose} className="text-sm font-medium">
           Cancel
         </button>
@@ -131,7 +131,7 @@ export function VideoRecorder({ onCapture, onClose, className }: VideoRecorderPr
         <span className="w-12" />
       </div>
 
-      <div className="relative flex-1">
+      <div className="relative min-h-0 flex-1">
         <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
         {state === 'recording' && (
           <div className="absolute top-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3 py-1">
@@ -151,7 +151,10 @@ export function VideoRecorder({ onCapture, onClose, className }: VideoRecorderPr
         )}
       </div>
 
-      <div className="flex items-center justify-center p-8">
+      <div
+        className="flex shrink-0 items-center justify-center px-8 pt-6 pb-8"
+        style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
+      >
         {state === 'recording' ? (
           <button
             type="button"
