@@ -56,9 +56,8 @@ async function markPartsUploaded(jobId: string, urls: string[]): Promise<void> {
     getReq.onsuccess = () => {
       const job = getReq.result
       if (job) {
-        const done = new Set(urls)
         for (const part of job.parts) {
-          if (part.url && done.has(part.url)) {
+          if (part.url && urls.includes(part.url)) {
             part.status = 'done'
             part.bgUploaded = true
           }

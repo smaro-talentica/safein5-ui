@@ -5,21 +5,35 @@
 import { env } from '@/utils/env'
 import type { CompleteResponse, InitResponse, PartsResponse } from './types'
 
-export class UploadHttpError extends Error {
+/** An Error carrying the HTTP status and an optional machine-readable code. */
+export interface UploadHttpError extends Error {
   status: number
-  code: string | undefined
+  code?: string
+}
 
-  constructor(status: number, code: string | undefined, message: string) {
-    super(message)
-    this.name = 'UploadHttpError'
-    this.status = status
-    this.code = code
-  }
+/** Build an upload error (plain Error augmented with status/code — no class). */
+export function makeUploadError(
+  status: number,
+  code: string | undefined,
+  message: string,
+): UploadHttpError {
+  const err = new Error(message) as UploadHttpError
+  err.name = 'UploadHttpError'
+  err.status = status
+  err.code = code
+  return err
+}
 
-  /** 5xx and 429 are transient; part PUT 403 is a likely-expired presigned URL. */
-  get retryable(): boolean {
-    return this.status >= 500 || this.status === 429 || this.status === 403
-  }
+/** Type guard: is this one of our HTTP errors (has a numeric status)? */
+export function isUploadHttpError(e: unknown): e is UploadHttpError {
+  return e instanceof Error && typeof (e as UploadHttpError).status === 'number'
+}
+
+/** 5xx and 429 are transient; part PUT 403 is a likely-expired presigned URL. */
+export function isRetryable(e: unknown): boolean {
+  if (!isUploadHttpError(e)) return true // network / unknown errors are retryable
+  if (e.code === 'NO_ETAG') return false // CORS misconfig — retrying won't help
+  return e.status >= 500 || e.status === 429 || e.status === 403
 }
 
 function apiUrl(path: string): string {
@@ -44,7 +58,7 @@ async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): P
     } catch {
       // non-JSON error body — keep statusText
     }
-    throw new UploadHttpError(res.status, code, message)
+    throw makeUploadError(res.status, code, message)
   }
   return res.json() as Promise<T>
 }
@@ -95,11 +109,11 @@ export function abortUpload(
 export async function putPart(url: string, body: Blob, signal?: AbortSignal): Promise<string> {
   const res = await fetch(url, { method: 'PUT', body, signal })
   if (!res.ok) {
-    throw new UploadHttpError(res.status, undefined, `Part PUT failed: ${res.status}`)
+    throw makeUploadError(res.status, undefined, `Part PUT failed: ${res.status}`)
   }
   const eTag = res.headers.get('ETag')
   if (!eTag) {
-    throw new UploadHttpError(
+    throw makeUploadError(
       0,
       'NO_ETAG',
       'S3 did not return an ETag header — check bucket CORS ExposeHeaders: ["ETag"].',
