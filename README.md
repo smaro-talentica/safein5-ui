@@ -102,6 +102,8 @@ This app is an installable Progressive Web App, configured via `vite-plugin-pwa`
 - **Custom service worker** (`src/sw.ts`, `injectManifest` strategy) — Workbox precaching plus **Background Fetch** handling so video uploads can continue while the app is closed (Chrome/Android).
 - Web app manifest (standalone display, theme/background colors, 192/512 icons incl. maskable)
 - Offline asset precaching via Workbox (`js`, `css`, `html`, `ico`, `png`, `svg`, `woff2`)
+- **Custom install prompt** — an in-app banner (`InstallPrompt`, `src/components/feature/InstallPrompt/`, driven by the `useInstallPrompt` hook) offers "Add to Home Screen" on every visit until the app is installed. On Chromium (Android Chrome / desktop Chrome/Edge) it triggers the native prompt via the captured `beforeinstallprompt` event; on iOS Safari (which has no such API) it shows the manual Share → Add to Home Screen steps. Note: browsers only expose the prompt after the app is installable **and** the user has engaged with the page — never on the very first paint.
+- The service worker and manifest are also enabled in **dev** (`devOptions` in `vite-plugin-pwa`), so installability can be tested with `npm run dev` without a production build.
 
 ## Project Structure
 

@@ -51,7 +51,7 @@ export function ScanQr() {
 
   if (!isMobile && !forceDesktop) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
         <h1 className="text-xl font-semibold">Open this on your phone</h1>
         <p className="max-w-sm text-sm text-slate-500">
           QR scanning uses your device camera and is only available on a mobile device. Please open
@@ -65,7 +65,7 @@ export function ScanQr() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center gap-4 p-4">
+    <div className="flex flex-1 flex-col items-center gap-4 p-4">
       <h1 className="text-lg font-semibold">Scan QR code</h1>
       <p className="text-sm text-slate-500">
         {active

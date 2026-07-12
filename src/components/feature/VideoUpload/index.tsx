@@ -92,7 +92,7 @@ export function VideoUpload({ className }: VideoUploadProps) {
 
   return (
     <div
-      className={cn('min-h-dvh w-full', className)}
+      className={cn('w-full flex-1', className)}
       style={{
         background: COLORS.surface,
         color: COLORS.onSurface,

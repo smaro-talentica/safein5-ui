@@ -9,7 +9,7 @@ export function ScanLanding() {
   const id = searchParams.get('id')
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-2xl">
         ✅
       </div>

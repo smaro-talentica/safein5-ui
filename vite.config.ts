@@ -25,8 +25,8 @@ export default defineConfig(({ command }) => ({
         name: 'Fast in 5',
         short_name: 'Fast in 5',
         description: 'Fast in 5 PWA',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        theme_color: '#e0f2fe',
+        background_color: '#e0f2fe',
         display: 'standalone',
         scope: '/',
         start_url: '/',
@@ -51,6 +51,14 @@ export default defineConfig(({ command }) => ({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      },
+      // Run the service worker + manifest in `npm run dev` too, so PWA
+      // installability can be tested without a production build. `type: 'module'`
+      // matches our TS service worker. Without this, vite-plugin-pwa disables the
+      // SW in dev and the browser never treats the app as installable.
+      devOptions: {
+        enabled: true,
+        type: 'module',
       },
     }),
   ],

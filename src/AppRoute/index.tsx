@@ -1,4 +1,5 @@
 import { BottomNav } from '@/components/ui/bottom-nav'
+import { InstallPrompt } from '@/components/feature/InstallPrompt'
 import { ScanFailed } from '@/pages/ScanFailed'
 import { ScanLanding } from '@/pages/ScanLanding'
 import { ScanQr } from '@/pages/ScanQr'
@@ -8,8 +9,11 @@ import { createBrowserRouter, Outlet } from 'react-router-dom'
 
 function RootLayout() {
   return (
-    <div className="min-h-dvh pb-16">
-      <Outlet />
+    <div className="flex min-h-dvh flex-col pb-16">
+      <main className="flex flex-1 flex-col">
+        <Outlet />
+      </main>
+      <InstallPrompt />
       <BottomNav />
     </div>
   )
