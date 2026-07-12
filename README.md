@@ -4,12 +4,17 @@ A React + TypeScript single-page app built with Vite, with PWA support.
 
 ## Features
 
-- **Video upload** (`/`, also `/upload`) — the app's only screen: a mobile-friendly view to record a short clip in-app or choose one from the gallery, then upload it. Videos are limited to **30 seconds** (configurable) and uploaded **resumably and in the background**:
+- **Video upload** (`/upload`) — a mobile-friendly view to record a short clip in-app or choose one from the gallery, then upload it. Videos are limited to **30 seconds** (configurable) and uploaded **resumably and in the background**:
   - **In-app recording** with a live countdown that hard-stops at the limit (`VideoRecorder`, `src/components/feature/VideoRecorder/`), plus gallery selection with client-side duration validation.
   - **Non-blocking, resumable uploads** via a singleton upload manager (`src/utils/upload/`): the file is split into ~6 MiB parts uploaded directly to S3 (multipart), with per-part retry/backoff so an upload never fails silently.
   - **Survives app close** — upload state and per-part progress are persisted in **IndexedDB** and auto-resume on reopen; on browsers that support the **Background Fetch API** (Chrome/Android) uploads continue while the app is closed. On iOS, uploads resume the next time the app is opened.
   - Implemented as the `VideoUpload` feature component (`src/components/feature/VideoUpload/`) rendered by the `UploadVideo` page (`src/pages/UploadVideo/`), bridged to React via the `useUpload` hook (`src/hooks/`).
   - **Backend contract** required for the upload flow (S3 multipart, presigned URLs) is fully specified in [`docs/BACKEND_UPLOAD_SPEC.md`](docs/BACKEND_UPLOAD_SPEC.md).
+- **QR scan & reroute** (the app's default screen — `/` redirects to `/scan`) — a QR scanning flow that reads a JSON payload and reroutes based on it:
+  - **`/scan`** — camera-backed QR scanner (`ScanQr` page + `QrScanner` feature component using `@zxing/browser`, works on Android and iOS/PWA). **Mobile only**: on laptop/desktop it shows an "open on your phone" notice instead of the camera (`useIsMobile` hook). Append **`?force=1`** to bypass the gate and use a desktop webcam for local testing. The camera stays **off** until the user presses **Scan**; scanning then runs for up to **30 seconds** before returning to the idle (camera off) state if nothing is found. A QR is accepted only when its payload is a **JSON object with a non-empty string `id`** — a valid code routes to `/landing?id=…`, anything else routes to `/failed`.
+  - **`/landing`** — success page a valid scan reroutes to; displays the decoded **`id`** (`?id=` query param) with a **Retry** action back to `/scan` (`ScanLanding` page).
+  - **`/failed`** — failure page an invalid scan reroutes to; shows an "Invalid QR code" message with a **Retry** action back to `/scan` (`ScanFailed` page).
+  - The Upload and Scan screens are reachable from a **fixed bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav.tsx`) with **Upload** and **Scan** entries.
 
 ## Getting Started
 
@@ -124,6 +129,7 @@ The `@` alias resolves to `src/`.
 - TanStack React Query
 - TanStack React Query Devtools
 - idb (IndexedDB wrapper — persists in-progress uploads)
+- @zxing/browser + @zxing/library (camera QR scanning on `/scan`)
 
 ### Forms
 
