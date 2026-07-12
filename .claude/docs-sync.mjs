@@ -27,120 +27,123 @@
 //   prompted for a given set of changed source files, we do not prompt again for
 //   that same set. It self-clears automatically when the changeset changes.
 
-import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { spawnSync } from 'node:child_process'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 
 // Doc files we care about keeping in sync.
-const DOC_FILES = ['README.md', 'architecture.md', 'api-spec.md'];
+const DOC_FILES = ['README.md', 'architecture.md', 'api-spec.md']
 
 // A changed path counts as "source" if it is NOT itself a doc file and looks
 // like code/config the docs might describe.
-const SOURCE_RE = /\.(ts|tsx|js|jsx|mjs|cjs|css|json|html|py|go|rs|java)$/i;
+const SOURCE_RE = /\.(ts|tsx|js|jsx|mjs|cjs|css|json|html|py|go|rs|java)$/i
 
 // Durable marker: the changeset we have already prompted for.
-const STATE_FILE = join(dirname(fileURLToPath(import.meta.url)), '.docs-sync-state');
+const STATE_FILE = join(dirname(fileURLToPath(import.meta.url)), '.docs-sync-state')
 
 function proceed() {
   // Exit 0 with no decision => allow the agent to stop normally.
-  process.exit(0);
+  process.exit(0)
 }
 
 function forceContinue(reason) {
-  process.stdout.write(JSON.stringify({ decision: 'block', reason }) + '\n');
-  process.exit(0);
+  process.stdout.write(JSON.stringify({ decision: 'block', reason }) + '\n')
+  process.exit(0)
 }
 
 // Collect files changed in the working tree: staged, unstaged, and untracked.
 function changedFiles() {
-  const out = spawnSync(
-    'git',
-    ['status', '--porcelain', '--untracked-files=all'],
-    { encoding: 'utf8', cwd: process.cwd() }
-  );
-  if (out.status !== 0 || !out.stdout) return [];
-  return out.stdout
-    .split('\n')
-    .map((line) => line.slice(3).trim()) // strip the 2-char status + space
-    .filter(Boolean)
-    // handle rename lines "old -> new": keep the new path
-    .map((p) => (p.includes('->') ? p.split('->').pop().trim() : p))
-    // strip surrounding quotes git adds for paths with spaces
-    .map((p) => p.replace(/^"|"$/g, ''));
+  const out = spawnSync('git', ['status', '--porcelain', '--untracked-files=all'], {
+    encoding: 'utf8',
+    cwd: process.cwd(),
+  })
+  if (out.status !== 0 || !out.stdout) return []
+  return (
+    out.stdout
+      .split('\n')
+      .map((line) => line.slice(3).trim()) // strip the 2-char status + space
+      .filter(Boolean)
+      // handle rename lines "old -> new": keep the new path
+      .map((p) => (p.includes('->') ? p.split('->').pop().trim() : p))
+      // strip surrounding quotes git adds for paths with spaces
+      .map((p) => p.replace(/^"|"$/g, ''))
+  )
 }
 
 // A stable fingerprint of the current changed-source set (order-independent).
 function fingerprint(paths) {
-  return createHash('sha1').update([...paths].sort().join('\n')).digest('hex');
+  return createHash('sha1')
+    .update([...paths].sort().join('\n'))
+    .digest('hex')
 }
 
 function alreadyPrompted(fp) {
   try {
-    return readFileSync(STATE_FILE, 'utf8').trim() === fp;
+    return readFileSync(STATE_FILE, 'utf8').trim() === fp
   } catch {
-    return false; // no state file yet
+    return false // no state file yet
   }
 }
 
 function remember(fp) {
   try {
-    writeFileSync(STATE_FILE, fp);
+    writeFileSync(STATE_FILE, fp)
   } catch {
     // If we can't persist, we fall back to the stop_hook_active guard below.
   }
 }
 
-let raw = '';
-process.stdin.on('data', (c) => (raw += c));
+let raw = ''
+process.stdin.on('data', (c) => (raw += c))
 process.stdin.on('end', () => {
-  let evt = {};
+  let evt = {}
   try {
-    evt = JSON.parse(raw) || {};
+    evt = JSON.parse(raw) || {}
   } catch {
     // If we can't read the event, don't trap the agent in a loop — let it stop.
-    proceed();
-    return;
+    proceed()
+    return
   }
 
   // LOOP-GUARD layer 1: the turn we ourselves re-woke. Cheap early bail.
   if (evt.stop_hook_active) {
-    proceed();
-    return;
+    proceed()
+    return
   }
 
   // (2) Detect changes deterministically.
-  const changed = changedFiles();
+  const changed = changedFiles()
   const changedSource = changed.filter(
-    (p) => SOURCE_RE.test(p) && !DOC_FILES.includes(p.split(/[/\\]/).pop())
-  );
+    (p) => SOURCE_RE.test(p) && !DOC_FILES.includes(p.split(/[/\\]/).pop()),
+  )
 
   if (changedSource.length === 0) {
-    proceed(); // no code changed -> nothing to document
-    return;
+    proceed() // no code changed -> nothing to document
+    return
   }
 
   // (3) Do the relevant docs actually exist?
-  const existingDocs = DOC_FILES.filter((d) => existsSync(d));
+  const existingDocs = DOC_FILES.filter((d) => existsSync(d))
   if (existingDocs.length === 0) {
-    proceed(); // no docs to update
-    return;
+    proceed() // no docs to update
+    return
   }
 
   // LOOP-GUARD layer 2 (the durable one): have we already prompted for THIS
   // exact set of changed source files? If so, do not prompt again — this is what
   // makes it "exactly once per changeset" instead of "once per re-wake". The
   // marker self-clears the moment the changed-source set differs.
-  const fp = fingerprint(changedSource);
+  const fp = fingerprint(changedSource)
   if (alreadyPrompted(fp)) {
-    proceed();
-    return;
+    proceed()
+    return
   }
-  remember(fp);
+  remember(fp)
 
   // (4) Force the SAME session to continue once, with a concrete instruction.
-  const fileList = changedSource.slice(0, 20).join(', ');
+  const fileList = changedSource.slice(0, 20).join(', ')
   const reason =
     `Documentation-sync check: you changed source files (${fileList}) but did not ` +
     `confirm the docs are still accurate. Review these doc files and update ONLY the ` +
@@ -148,7 +151,7 @@ process.stdin.on('end', () => {
     `In particular, make sure any new user-facing feature, route, page, script, ` +
     `environment variable, or dependency is reflected. If a doc is already accurate, ` +
     `say so explicitly and make no edit. Do not create new docs and do not touch ` +
-    `unrelated sections. This is an automated one-time reminder — after this pass you may stop.`;
+    `unrelated sections. This is an automated one-time reminder — after this pass you may stop.`
 
-  forceContinue(reason);
-});
+  forceContinue(reason)
+})

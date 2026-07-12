@@ -1,16 +1,20 @@
-import { About } from '@/pages/About'
-import { Home } from '@/pages/Home'
+import { BottomNav } from '@/components/ui/bottom-nav'
+import { InstallPrompt } from '@/components/feature/InstallPrompt'
+import { ScanFailed } from '@/pages/ScanFailed'
+import { ScanLanding } from '@/pages/ScanLanding'
+import { ScanQr } from '@/pages/ScanQr'
 import { UploadVideo } from '@/pages/UploadVideo'
-import { RouterProvider } from 'react-router-dom'
-import { createBrowserRouter, Link, Outlet } from 'react-router-dom'
+import { Navigate, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Outlet } from 'react-router-dom'
 
 function RootLayout() {
   return (
-    <div>
-      <nav>
-        <Link to="/">Home</Link> | <Link to="/about">About</Link> | <Link to="/upload">Upload</Link>
-      </nav>
-      <Outlet />
+    <div className="flex min-h-dvh flex-col pb-16">
+      <main className="flex flex-1 flex-col">
+        <Outlet />
+      </main>
+      <InstallPrompt />
+      <BottomNav />
     </div>
   )
 }
@@ -20,9 +24,11 @@ const router = createBrowserRouter([
     path: '/',
     element: <RootLayout />,
     children: [
-      { index: true, element: <Home /> },
-      { path: 'about', element: <About /> },
+      { index: true, element: <Navigate to="/scan" replace /> },
       { path: 'upload', element: <UploadVideo /> },
+      { path: 'scan', element: <ScanQr /> },
+      { path: 'landing', element: <ScanLanding /> },
+      { path: 'failed', element: <ScanFailed /> },
     ],
   },
 ])
