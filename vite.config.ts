@@ -3,13 +3,13 @@ import react from '@vitejs/plugin-react'
 import checker from 'vite-plugin-checker'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
-import basicSsl from '@vitejs/plugin-basic-ssl'
+import mkcert from 'vite-plugin-mkcert'
 import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [
-    command === 'serve' ? basicSsl() : null,
+    command === 'serve' ? mkcert() : null,
     react(),
     tailwindcss(),
     checker({ typescript: true }),

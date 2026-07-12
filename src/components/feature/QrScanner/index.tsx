@@ -31,9 +31,15 @@ export function QrScanner({ onDecode, className }: QrScannerProps) {
     let cancelled = false
     let starting = false
 
+    let stream: MediaStream | undefined
+
     const stop = () => {
       controls?.stop()
       controls = undefined
+      // We own the MediaStream (see start), so we must stop its tracks — ZXing
+      // only stops its decode loop, not a stream it didn't create.
+      stream?.getTracks().forEach((track) => track.stop())
+      stream = undefined
     }
 
     const start = async () => {
@@ -43,28 +49,61 @@ export function QrScanner({ onDecode, className }: QrScannerProps) {
       if (!video) return
       starting = true
       try {
-        const next = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: 'environment' } } },
-          video,
-          (result) => {
-            if (!result) return
-            const text = result.getText()
-            const now = performance.now()
-            const last = lastRef.current
-            if (last && last.text === text && now - last.at < REPEAT_THROTTLE_MS) {
-              return
-            }
-            lastRef.current = { text, at: now }
-            onDecode(text)
-          },
-        )
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error(
+            window.isSecureContext
+              ? 'This browser exposes no camera API.'
+              : 'Camera needs a secure (trusted HTTPS) connection. Open this page over HTTPS with a trusted certificate.',
+          )
+        }
+
+        // Own the whole camera-attach dance ourselves rather than letting ZXing
+        // do it. On Android Chrome, ZXing's internal getUserMedia + play() often
+        // leaves the <video> black when the element was just mounted (the stream
+        // is live but never renders until a lock/unlock nudges it). Doing it here
+        // lets us guarantee the inline-playback attributes are set and that
+        // play() is awaited before ZXing starts reading frames.
+        const media = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false,
+        })
+        if (cancelled) {
+          media.getTracks().forEach((track) => track.stop())
+          return
+        }
+        stream = media
+        // These attributes MUST be set for inline autoplay on mobile; a muted,
+        // playsInline video is allowed to start without a user gesture.
+        video.setAttribute('playsinline', 'true')
+        video.muted = true
+        video.srcObject = media
+        // Wait for the element to actually have frames before playing/decoding.
+        await new Promise<void>((resolve) => {
+          if (video.readyState >= 2) return resolve()
+          video.addEventListener('loadedmetadata', () => resolve(), { once: true })
+        })
+        await video.play().catch(() => {})
+
+        const next = await reader.decodeFromVideoElement(video, (result) => {
+          if (!result) return
+          const text = result.getText()
+          const now = performance.now()
+          const last = lastRef.current
+          if (last && last.text === text && now - last.at < REPEAT_THROTTLE_MS) {
+            return
+          }
+          lastRef.current = { text, at: now }
+          onDecode(text)
+        })
         if (cancelled) next.stop()
         else controls = next
       } catch (err) {
         setError(
           err instanceof DOMException && err.name === 'NotAllowedError'
             ? 'Camera permission denied. Allow camera access and reload.'
-            : 'Could not start the camera on this device.',
+            : err instanceof Error
+              ? err.message
+              : 'Could not start the camera on this device.',
         )
       } finally {
         starting = false

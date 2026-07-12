@@ -44,7 +44,7 @@ npm install
 
 | Command               | Description                                                             |
 | --------------------- | ----------------------------------------------------------------------- |
-| `npm run dev`         | Start the dev server in **development** mode (HTTPS via basic-ssl, HMR) |
+| `npm run dev`         | Start the dev server in **development** mode (HTTPS via mkcert, LAN-exposed via `--host`, HMR) |
 | `npm run dev:stage`   | Start the dev server in **staging** mode                                |
 | `npm run dev:prod`    | Start the dev server in **production** mode                             |
 | `npm run build`       | Type-check (`tsc -b`) and build for **production**                      |
@@ -68,7 +68,8 @@ The app supports three environments, each driven by a Vite **mode** and its matc
 - Variables follow Vite conventions and **must be prefixed with `VITE_`** to be exposed to the client.
 - See `.env.example` for the full list of supported variables. Use `.env.local` / `.env.<mode>.local` for machine-specific overrides and secrets (git-ignored).
 - Typed access is centralized in `src/utils/env.ts` (`env`, `isDevelopment`, `isStaging`, `isProduction`); types are declared in `src/vite-env.d.ts`.
-- The dev server runs over HTTPS in all modes via `@vitejs/plugin-basic-ssl`.
+- The dev server runs over HTTPS in all modes via `vite-plugin-mkcert`, which issues a locally-trusted certificate (needed for camera access and PWA testing on real devices).
+- The `dev` scripts pass `--host`, so the server is exposed on your LAN. Open the printed **Network** URL (e.g. `https://<your-lan-ip>:5173`) on a phone on the same Wi-Fi to test with instant HMR — no rebuild/redeploy. Trust the mkcert root CA on the device (or use a secure-origin flag) so camera-dependent features like QR scanning work.
 
 Available variables:
 
@@ -79,6 +80,20 @@ Available variables:
 | `VITE_UPLOAD_PART_SIZE`        | Bytes per multipart upload part (default 6 MiB; must be ≥ 5 MiB per S3) |
 | `VITE_UPLOAD_CONCURRENCY`      | Max concurrent part uploads (default 4)                                 |
 | `VITE_UPLOAD_MAX_DURATION_SEC` | Max allowed video duration in seconds (default 30)                      |
+
+## Testing on a phone (camera / PWA)
+
+The QR scanner needs the **device camera**, which browsers only expose in a **secure context** — HTTPS with a certificate the device *trusts*, or `localhost`. When you open the dev server's Network URL on a phone, the page loads but the camera silently fails (black preview, no error) if that context isn't trusted. To test camera features on a real phone:
+
+1. Phone and PC must be on the **same Wi-Fi**.
+2. Run `npm run dev` and open the printed **Network** URL (e.g. `https://<your-lan-ip>:5173`) on the phone.
+   - On Windows, allow Node through the firewall (Private networks) if prompted.
+3. Grant the phone a **secure context** using one of:
+   - **Trust the mkcert CA (recommended, permanent):** after the first `npm run dev`, mkcert's root CA is at `%LOCALAPPDATA%\mkcert\rootCA.pem` (macOS/Linux: `~/.local/share/mkcert/rootCA.pem` or run `mkcert -CAROOT`). Transfer it to the phone and install it as a trusted **CA certificate** (Android: Settings → Security → Install a certificate → CA certificate; iOS: install the profile, then enable it under Settings → General → About → Certificate Trust Settings). The origin is then fully trusted — no warnings.
+   - **Chrome insecure-origin flag (quick, per-device):** on the phone's Chrome open `chrome://flags/#unsafely-treat-insecure-origin-as-secure`, set it **Enabled**, add `https://<your-lan-ip>:5173`, and relaunch. This forces a secure context without installing a cert.
+4. Also confirm the browser has OS-level **camera permission** (Android: Settings → Apps → Chrome → Permissions → Camera), then tap **Scan** and **Allow** when prompted.
+
+Code changes hot-reload on the phone via HMR — no rebuild or redeploy needed.
 
 ## PWA Support
 
@@ -147,7 +162,7 @@ The `@` alias resolves to `src/`.
 ### Build & Plugins
 
 - @vitejs/plugin-react
-- @vitejs/plugin-basic-ssl
+- vite-plugin-mkcert (locally-trusted HTTPS certs for the dev server)
 - @tailwindcss/vite
 - vite-plugin-checker
 - vite-plugin-pwa
