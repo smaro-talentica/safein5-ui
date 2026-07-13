@@ -20,6 +20,11 @@ dist-ssr
 !.claude/protect-env.mjs
 !.claude/format-and-lint.mjs
 !.claude/log-prompt.mjs
+!.claude/hook-stitch-export-guardrail.mjs
+!.claude/agents/
+!.claude/agents/**
+!.claude/skills/
+!.claude/skills/**
 .claude/settings.local.json
 .claude/prompt.jsonl
 .claude/.docs-sync-state

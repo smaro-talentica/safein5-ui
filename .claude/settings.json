@@ -35,6 +35,12 @@
             "command": "node .claude/format-and-lint.mjs",
             "timeout": 120,
             "statusMessage": "Linting + formatting edited file"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hook-stitch-export-guardrail.mjs",
+            "timeout": 15,
+            "statusMessage": "Checking stitch-export conventions"
           }
         ]
       }
