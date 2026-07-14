@@ -1,15 +1,11 @@
 import { Link, useSearchParams } from 'react-router-dom'
 
-/**
- * Route 2 — landing page a scanned QR code reroutes to. Displays the `id`
- * decoded from the scanned QR payload, with a Rescan action back to the scanner.
- */
-export function ScanLanding() {
+export function ScanSuccess() {
   const [searchParams] = useSearchParams()
   const id = searchParams.get('id')
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+    <div className="flex min-h-full flex-col items-center justify-center gap-3 p-6 text-center bg-white">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-2xl">
         ✅
       </div>

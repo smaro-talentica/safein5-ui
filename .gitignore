@@ -15,18 +15,17 @@ dist-ssr
 # Claude Code: share hooks + settings with the team, but keep personal /
 # machine-local artifacts out of git.
 .claude/*
+!.claude/README.md
 !.claude/settings.json
-!.claude/docs-sync.mjs
-!.claude/protect-env.mjs
-!.claude/format-and-lint.mjs
-!.claude/log-prompt.mjs
-!.claude/hook-stitch-export-guardrail.mjs
+!.claude/hook-readme-sync.mjs
+!.claude/hook-protect-env.mjs
+!.claude/hook-format-and-lint.mjs
+!.claude/hook-stitch-guardrail.mjs
 !.claude/agents/
 !.claude/agents/**
 !.claude/skills/
 !.claude/skills/**
 .claude/settings.local.json
-.claude/prompt.jsonl
 .claude/.docs-sync-state
 
 # Editor directories and files

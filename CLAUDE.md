@@ -45,6 +45,26 @@ Never read `import.meta.env` directly in components. Typed access is centralized
 - `src/components/feature/` — reusable components combining **styling AND logic** (data fetching, state, behavior) for a feature.
 - Compose Tailwind classes through `cn()` from `@/utils/cn` (clsx + tailwind-merge); use `class-variance-authority` for variant APIs (see `src/components/ui/button.tsx` for the canonical pattern).
 
+### Generated-component folder structure
+
+When **you (an agent) scaffold a new component on your own**, each component is its own folder whose concerns are split into dedicated files by role. `index.tsx` is always present; the others are created **only when that concern actually exists** — do not scaffold empty placeholder files.
+
+```
+<ComponentName>/
+├── index.tsx     # the component itself (JSX/rendering + wiring). Always present.
+├── model.tsx     # TypeScript types/interfaces for this component (props, domain shapes).
+├── helper.tsx    # pure, framework-agnostic JS/TS logic (formatting, parsing, computation).
+├── constant.tsx  # constants for this component (magic numbers, config, static maps).
+├── action.tsx    # API calls / mutations (write-side; the functions that hit endpoints).
+└── query.tsx     # TanStack Query hooks (read-side useQuery, query keys, options).
+```
+
+Rules:
+- **Extensions:** all files use the `.tsx` extension (project preference for uniform naming), even the non-JSX ones (`model`/`helper`/`constant`/`action`/`query`).
+- **Split only when warranted:** a trivial component stays a single `index.tsx`. Move a concern into its own file once it materially exists — types → `model.tsx`, pure logic → `helper.tsx`, constants → `constant.tsx`, endpoint calls → `action.tsx`, TanStack Query hooks → `query.tsx`. `index.tsx` imports from its siblings.
+- **Import within the folder** via relative paths (`./model`, `./helper`, …); import the component from elsewhere via the folder (`@/components/feature/<ComponentName>`), which resolves to its `index.tsx`.
+- This layers **on top of** the directory rules above: `ui/` folders stay presentation-only (typically just `index.tsx`, maybe `model.tsx`); `feature/` folders and routed `pages/<Name>/` folders are where `helper`/`action`/`query` splits usually appear.
+
 ### shadcn/ui
 
 Configured via `components.json` (style `default`, base color `slate`, CSS variables, global stylesheet `src/global.css`). Aliases: `ui` → `@/components/ui`, `utils` → `@/utils/cn`. The `hooks` alias maps to `@/hooks`, but no `hooks/` directory exists yet — create it when the first hook is added.

@@ -2,33 +2,16 @@ import { QrScanner } from '@/components/feature/QrScanner'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { SCAN_TIMEOUT_MS } from './constant'
+import { resolveScanTarget } from './helper'
 
-type ScanResult = { kind: 'ok'; id: string } | { kind: 'invalid' }
-
-/** Give up and return to idle if no QR is decoded within this window (ms). */
-const SCAN_TIMEOUT_MS = 30_000
-
-/**
- * Route 1 — QR scanner. Only usable on a phone/tablet (needs a rear camera);
- * on laptop/desktop it renders a "mobile only" notice instead of the camera.
- * Append `?force=1` to bypass the gate on desktop (webcam) for local testing.
- *
- * The camera stays off until the user presses Scan. Once scanning, one of three
- * things happens: a valid QR routes to `/landing` with its `id`, an invalid QR
- * routes to `/failed`, or 30s elapse with nothing found and the page returns to
- * its idle (camera off) state.
- */
 export function ScanQr() {
   const isMobile = useIsMobile()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const forceDesktop = searchParams.get('force') === '1'
-  // Camera only runs while active; starts off so nothing scans until Scan is hit.
-  // Arriving with `?auto=1` (e.g. a Retry from /landing or /failed) opens the
-  // camera immediately, skipping the idle Scan button.
   const [active, setActive] = useState(searchParams.get('auto') === '1')
 
-  // Stop scanning after SCAN_TIMEOUT_MS with no result and return to idle.
   useEffect(() => {
     if (!active) return
     const timer = window.setTimeout(() => setActive(false), SCAN_TIMEOUT_MS)
@@ -39,9 +22,9 @@ export function ScanQr() {
     (text: string) => {
       const result = resolveScanTarget(text)
       if (result.kind === 'ok') {
-        navigate(`/landing?id=${encodeURIComponent(result.id)}`)
+        navigate(`/scan/success?id=${encodeURIComponent(result.id)}`)
       } else {
-        navigate('/failed')
+        navigate('/scan/fail')
       }
     },
     [navigate],
@@ -90,33 +73,4 @@ export function ScanQr() {
       )}
     </div>
   )
-}
-
-/**
- * Classifies a decoded QR payload. A redirect only happens when the payload is
- * a JSON object carrying a non-empty string `id`; every other payload (non-JSON,
- * wrong shape, or missing `id`) is rejected as invalid.
- */
-function resolveScanTarget(text: string): ScanResult {
-  const value = text.trim()
-  if (!value) return { kind: 'invalid' }
-
-  let payload: unknown
-  try {
-    payload = JSON.parse(value)
-  } catch {
-    return { kind: 'invalid' }
-  }
-
-  if (
-    typeof payload !== 'object' ||
-    payload === null ||
-    !('id' in payload) ||
-    typeof (payload as { id: unknown }).id !== 'string' ||
-    !(payload as { id: string }).id.trim()
-  ) {
-    return { kind: 'invalid' }
-  }
-
-  return { kind: 'ok', id: (payload as { id: string }).id }
 }

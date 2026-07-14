@@ -7,21 +7,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/protect-env.mjs",
+            "command": "node .claude/hook-protect-env.mjs",
             "timeout": 10,
             "statusMessage": "Checking env-file guardrail"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/log-prompt.mjs",
-            "timeout": 10,
-            "statusMessage": "Logging prompt"
           }
         ]
       }
@@ -32,13 +20,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/format-and-lint.mjs",
+            "command": "node .claude/hook-format-and-lint.mjs",
             "timeout": 120,
             "statusMessage": "Linting + formatting edited file"
           },
           {
             "type": "command",
-            "command": "node .claude/hook-stitch-export-guardrail.mjs",
+            "command": "node .claude/hook-stitch-guardrail.mjs",
             "timeout": 15,
             "statusMessage": "Checking stitch-export conventions"
           }
@@ -50,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/docs-sync.mjs",
+            "command": "node .claude/hook-readme-sync.mjs",
             "timeout": 15,
             "statusMessage": "Checking docs are in sync with code"
           }

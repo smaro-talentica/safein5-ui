@@ -1,16 +1,17 @@
 import { BottomNav } from '@/components/ui/bottom-nav'
 import { InstallPrompt } from '@/components/feature/InstallPrompt'
-import { ScanFailed } from '@/pages/ScanFailed'
-import { ScanLanding } from '@/pages/ScanLanding'
+import { ScanFail } from '@/pages/ScanFail'
+import { ScanSuccess } from '@/pages/ScanSuccess'
 import { ScanQr } from '@/pages/ScanQr'
 import { UploadVideo } from '@/pages/UploadVideo'
 import { Navigate, RouterProvider } from 'react-router-dom'
 import { createBrowserRouter, Outlet } from 'react-router-dom'
+import { cn } from '@/utils/cn'
 
 function RootLayout() {
   return (
-    <div className="flex min-h-dvh flex-col pb-16">
-      <main className="flex flex-1 flex-col">
+    <div className={cn('flex h-dvh flex-col overflow-hidden bg-background')}>
+      <main className={cn('min-h-0 flex-1 overflow-y-auto')}>
         <Outlet />
       </main>
       <InstallPrompt />
@@ -26,9 +27,14 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/scan" replace /> },
       { path: 'upload', element: <UploadVideo /> },
-      { path: 'scan', element: <ScanQr /> },
-      { path: 'landing', element: <ScanLanding /> },
-      { path: 'failed', element: <ScanFailed /> },
+      {
+        path: 'scan',
+        children: [
+          { index: true, element: <ScanQr /> },
+          { path: 'success', element: <ScanSuccess /> },
+          { path: 'fail', element: <ScanFail /> },
+        ],
+      },
     ],
   },
 ])

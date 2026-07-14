@@ -69,6 +69,27 @@ purpose of this workflow.
 - A full routed screen → `src/pages/<Name>/index.tsx`, registered in
   `src/AppRoute/index.tsx`.
 
+**Generated-component folder structure (target shape for the human's hand-placement):**
+This repo splits a generated component's concerns across files in its folder (see the
+"Generated-component folder structure" section of `CLAUDE.md`). Your staging output is a
+single flat file, but you MUST author it so that split is trivial and report the target
+folder shape:
+- `index.tsx` — the component (JSX / rendering / wiring). Always present.
+- `model.tsx` — TypeScript types/interfaces (props, domain shapes).
+- `helper.tsx` — pure, framework-agnostic JS/TS logic (formatting, parsing, computation).
+- `constant.tsx` — constants (magic numbers, config, static maps).
+- `action.tsx` — API calls / mutations (write-side).
+- `query.tsx` — TanStack Query hooks (read-side `useQuery`, keys, options).
+
+Rules: all files use the `.tsx` extension; create a sibling file **only when that
+concern actually exists** (a trivial component is just `index.tsx` — no empty
+placeholders). To keep the split trivial for the human, within your single staging file
+**group and clearly comment the sections** in this order — types (`// model.tsx`),
+constants (`// constant.tsx`), pure helpers (`// helper.tsx`), actions (`// action.tsx`),
+queries (`// query.tsx`), then the component — so each block maps 1:1 to a target file.
+In your report, list which of these files the human should create when they hand-place
+the component into `src/`.
+
 ## Output contract
 
 - Exactly one component file per run at `stitch-export/<ComponentName>.tsx`
@@ -89,5 +110,6 @@ File: stitch-export/<Name>.tsx
 Source: <stitch screen/project id | image path | text>
 Assumes shadcn primitives: <list, or "none beyond button">
 Suggested placement: <ui | feature | pages/<Name>>
+Split files to create on hand-placement: <e.g. index.tsx, model.tsx — or "index.tsx only">
 TODOs for human: <bullet list, or "none">
 ```
