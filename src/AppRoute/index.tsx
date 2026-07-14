@@ -3,7 +3,6 @@ import { InstallPrompt } from '@/components/feature/InstallPrompt'
 import { ScanFail } from '@/pages/ScanFail'
 import { ScanSuccess } from '@/pages/ScanSuccess'
 import { ScanQr } from '@/pages/ScanQr'
-import { UploadVideo } from '@/pages/UploadVideo'
 import { Navigate, RouterProvider } from 'react-router-dom'
 import { createBrowserRouter, Outlet } from 'react-router-dom'
 import { cn } from '@/utils/cn'
@@ -26,7 +25,6 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <Navigate to="/scan" replace /> },
-      { path: 'upload', element: <UploadVideo /> },
       {
         path: 'scan',
         children: [

@@ -4,17 +4,11 @@ A React + TypeScript single-page app built with Vite, with PWA support.
 
 ## Features
 
-- **Video upload** (`/upload`) — a mobile-friendly view to record a short clip in-app or choose one from the gallery, then upload it. Videos are limited to **30 seconds** (configurable) and uploaded **resumably and in the background**:
-  - **In-app recording** with a live countdown that hard-stops at the limit (`VideoRecorder`, `src/components/feature/VideoRecorder/`), plus gallery selection with client-side duration validation.
-  - **Non-blocking, resumable uploads** via a singleton upload manager (`src/utils/upload/`): the file is split into ~6 MiB parts uploaded directly to S3 (multipart), with per-part retry/backoff so an upload never fails silently.
-  - **Survives app close** — upload state and per-part progress are persisted in **IndexedDB** and auto-resume on reopen; on browsers that support the **Background Fetch API** (Chrome/Android) uploads continue while the app is closed. On iOS, uploads resume the next time the app is opened.
-  - Implemented as the `VideoUpload` feature component (`src/components/feature/VideoUpload/`) rendered by the `UploadVideo` page (`src/pages/UploadVideo/`), bridged to React via the `useUpload` hook (`src/hooks/`).
-  - **Backend contract** required for the upload flow (S3 multipart, presigned URLs) is fully specified in [`docs/BACKEND_UPLOAD_SPEC.md`](docs/BACKEND_UPLOAD_SPEC.md).
 - **QR scan & reroute** (the app's default screen — `/` redirects to `/scan`) — a QR scanning flow that reads a JSON payload and reroutes based on it:
   - **`/scan`** — camera-backed QR scanner (`ScanQr` page + `QrScanner` feature component using `@zxing/browser`, works on Android and iOS/PWA). **Mobile only**: on laptop/desktop it shows an "open on your phone" notice instead of the camera (`useIsMobile` hook). Append **`?force=1`** to bypass the gate and use a desktop webcam for local testing. The camera stays **off** until the user presses **Scan**; scanning then runs for up to **30 seconds** before returning to the idle (camera off) state if nothing is found. A QR is accepted only when its payload is a **JSON object with a non-empty string `id`** — a valid code routes to `/scan/success?id=…`, anything else routes to `/scan/fail`.
   - **`/scan/success`** — success page a valid scan reroutes to; displays the decoded **`id`** (`?id=` query param) with a **Retry** action back to `/scan` (`ScanSuccess` page).
   - **`/scan/fail`** — failure page an invalid scan reroutes to; shows an "Invalid QR code" message with a **Retry** action back to `/scan` (`ScanFail` page).
-  - The Upload and Scan screens are reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`) with **Upload** and **Scan** entries.
+  - The Scan screen is reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`).
 
 ## Getting Started
 
@@ -75,11 +69,8 @@ Available variables:
 
 | Variable                       | Description                                                             |
 | ------------------------------ | ----------------------------------------------------------------------- |
-| `VITE_APP_ENV`                 | Current environment: `development` \| `staging` \| `production`         |
-| `VITE_API_BASE_URL`            | Base URL for API requests (incl. the `/uploads/*` endpoints)            |
-| `VITE_UPLOAD_PART_SIZE`        | Bytes per multipart upload part (default 6 MiB; must be ≥ 5 MiB per S3) |
-| `VITE_UPLOAD_CONCURRENCY`      | Max concurrent part uploads (default 4)                                 |
-| `VITE_UPLOAD_MAX_DURATION_SEC` | Max allowed video duration in seconds (default 30)                      |
+| `VITE_APP_ENV`      | Current environment: `development` \| `staging` \| `production` |
+| `VITE_API_BASE_URL` | Base URL for API requests                                       |
 
 ## Testing on a phone (camera / PWA)
 
@@ -99,7 +90,7 @@ Code changes hot-reload on the phone via HMR — no rebuild or redeploy needed.
 
 This app is an installable Progressive Web App, configured via `vite-plugin-pwa`:
 
-- **Custom service worker** (`src/sw.ts`, `injectManifest` strategy) — Workbox precaching plus **Background Fetch** handling so video uploads can continue while the app is closed (Chrome/Android).
+- **Custom service worker** (`src/sw.ts`, `injectManifest` strategy) — Workbox app-shell precaching, kept as a custom SW so app-specific behavior can be added later.
 - Web app manifest (standalone display, theme/background colors, 192/512 icons incl. maskable)
 - Offline asset precaching via Workbox (`js`, `css`, `html`, `ico`, `png`, `svg`, `woff2`)
 - **Custom install prompt** — an in-app banner (`InstallPrompt`, `src/components/feature/InstallPrompt/`, driven by the `useInstallPrompt` hook) offers "Add to Home Screen" on every visit until the app is installed. On Chromium (Android Chrome / desktop Chrome/Edge) it triggers the native prompt via the captured `beforeinstallprompt` event; on iOS Safari (which has no such API) it shows the manual Share → Add to Home Screen steps. Note: browsers only expose the prompt after the app is installable **and** the user has engaged with the page — never on the very first paint.
@@ -114,11 +105,10 @@ src/
 ├── components/      Reusable components
 │   ├── ui/          Presentational components — styling only, no logic (incl. shadcn/ui)
 │   └── feature/     Reusable components with styling AND logic
-├── hooks/           Reusable React hooks — @/hooks (e.g. useUpload)
+├── hooks/           Reusable React hooks — @/hooks (e.g. useIsMobile)
 ├── pages/           Page components
-├── utils/           Utilities (cn, env helpers, upload engine) — @/utils
-│   └── upload/      Resumable upload engine (manager, IndexedDB, chunking, API)
-├── sw.ts            Custom service worker (precache + Background Fetch uploads)
+├── utils/           Utilities (cn, env helpers) — @/utils
+├── sw.ts            Custom service worker (app-shell precache)
 ├── main.tsx         App entry point
 ├── global.css       Global styles
 └── vite-env.d.ts    Vite/PWA + env type declarations
@@ -145,7 +135,6 @@ The `@` alias resolves to `src/`.
 - React Router DOM
 - TanStack React Query
 - TanStack React Query Devtools
-- idb (IndexedDB wrapper — persists in-progress uploads)
 - @zxing/browser + @zxing/library (camera QR scanning on `/scan`)
 
 ### Forms
@@ -177,4 +166,3 @@ The `@` alias resolves to `src/`.
 - Vitest
 - @vitest/coverage-v8 (unit-test coverage via `npx vitest run --coverage`)
 - jsdom
-- fake-indexeddb (IndexedDB in unit tests)

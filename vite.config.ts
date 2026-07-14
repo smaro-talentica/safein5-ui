@@ -15,8 +15,8 @@ export default defineConfig(({ command }) => ({
     checker({ typescript: true }),
     VitePWA({
       registerType: 'autoUpdate',
-      // Custom SW (src/sw.ts) so we can add Background Fetch upload handling
-      // on top of Workbox precaching.
+      // Custom SW (src/sw.ts) on top of Workbox precaching, so app-specific
+      // service-worker behavior can be added later.
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',

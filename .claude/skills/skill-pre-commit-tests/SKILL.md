@@ -62,15 +62,14 @@ report to drive step 3; don't test lines that carry no logic.
 For each changed **pure-logic** file lacking adjacent coverage for its new behavior:
 
 - **Scope of authoring = pure logic only:** `src/utils/**`, `helper.tsx`, `constant.tsx`
-  maps worth asserting, non-React hook logic, the upload engine's injectable seams.
-  React/DOM/browser-bound changes (`index.tsx`, real `MediaRecorder`/`getUserMedia`,
-  `window` events) → **report as a deferred gap** (the repo has no `@testing-library/react`);
-  do not force brittle tests.
-- **Match the existing idiom exactly.** Study a current test first (`src/utils/upload/
-  retry.test.ts` is canonical): co-locate `foo.ts → foo.test.ts`; `import { describe,
+  maps worth asserting, non-React hook logic. React/DOM/browser-bound changes
+  (`index.tsx`, real `MediaRecorder`/`getUserMedia`, `window` events) → **report as a
+  deferred gap** (the repo has no `@testing-library/react`); do not force brittle tests.
+- **Match the existing idiom exactly.** Study a current test first (`src/pages/ScanQr/
+  helper.test.ts` is a good example): co-locate `foo.ts → foo.test.ts`; `import { describe,
   expect, it, vi } from 'vitest'`; **inject/mock at the seam** (pass fakes like `() => 0`,
-  mock `fetch` with `vi.fn()`, use `fake-indexeddb`); cover **happy + error + edge**
-  branches, not one call. 2-space indent, no tabs, no `any`.
+  mock `fetch` with `vi.fn()`); cover **happy + error + edge** branches, not one call.
+  2-space indent, no tabs, no `any`.
 - **Only logical test cases.** Every test asserts real behavior. Reject anything that only
   restates a constant as its own literal, snapshot-dumps to color lines, or weakens an
   assertion to pass. If a changed line cannot be covered by a meaningful test (unreachable
