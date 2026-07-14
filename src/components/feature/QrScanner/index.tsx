@@ -4,11 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { REPEAT_THROTTLE_MS } from './constant'
 import type { QrScannerProps } from './model'
 
-/**
- * Camera-backed QR scanner. Uses ZXing's canvas decode loop so it works across
- * Android and iOS (including installed PWAs), where the native BarcodeDetector
- * API is unavailable. Prefers the rear camera.
- */
 export function QrScanner({ onDecode, className }: QrScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const lastRef = useRef<{ text: string; at: number } | null>(null)
@@ -25,14 +20,11 @@ export function QrScanner({ onDecode, className }: QrScannerProps) {
     const stop = () => {
       controls?.stop()
       controls = undefined
-      // We own the MediaStream (see start), so we must stop its tracks — ZXing
-      // only stops its decode loop, not a stream it didn't create.
       stream?.getTracks().forEach((track) => track.stop())
       stream = undefined
     }
 
     const start = async () => {
-      // Guard against overlapping starts (e.g. visibility flapping quickly).
       if (cancelled || controls || starting) return
       const video = videoRef.current
       if (!video) return
@@ -46,12 +38,6 @@ export function QrScanner({ onDecode, className }: QrScannerProps) {
           )
         }
 
-        // Own the whole camera-attach dance ourselves rather than letting ZXing
-        // do it. On Android Chrome, ZXing's internal getUserMedia + play() often
-        // leaves the <video> black when the element was just mounted (the stream
-        // is live but never renders until a lock/unlock nudges it). Doing it here
-        // lets us guarantee the inline-playback attributes are set and that
-        // play() is awaited before ZXing starts reading frames.
         const media = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: 'environment' } },
           audio: false,
@@ -61,12 +47,9 @@ export function QrScanner({ onDecode, className }: QrScannerProps) {
           return
         }
         stream = media
-        // These attributes MUST be set for inline autoplay on mobile; a muted,
-        // playsInline video is allowed to start without a user gesture.
         video.setAttribute('playsinline', 'true')
         video.muted = true
         video.srcObject = media
-        // Wait for the element to actually have frames before playing/decoding.
         await new Promise<void>((resolve) => {
           if (video.readyState >= 2) return resolve()
           video.addEventListener('loadedmetadata', () => resolve(), { once: true })
@@ -99,10 +82,6 @@ export function QrScanner({ onDecode, className }: QrScannerProps) {
       }
     }
 
-    // When the screen locks or the app is backgrounded, the browser suspends the
-    // camera track; on resume ZXing's loop stays alive but never decodes again,
-    // so the preview looks frozen. Tear the camera down when hidden and rebuild a
-    // fresh session when the page becomes visible again.
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') void start()
       else stop()
@@ -110,8 +89,6 @@ export function QrScanner({ onDecode, className }: QrScannerProps) {
 
     void start()
     document.addEventListener('visibilitychange', handleVisibility)
-    // iOS restores from the bfcache with a `pageshow` (persisted) instead of a
-    // visibility change; restart on that too.
     window.addEventListener('pageshow', handleVisibility)
 
     return () => {

@@ -8,7 +8,7 @@ A React + TypeScript single-page app built with Vite, with PWA support.
   - **`/scan`** — camera-backed QR scanner (`ScanQr` page + `QrScanner` feature component using `@zxing/browser`, works on Android and iOS/PWA). **Mobile only**: on laptop/desktop it shows an "open on your phone" notice instead of the camera (`useIsMobile` hook). Append **`?force=1`** to bypass the gate and use a desktop webcam for local testing. The camera stays **off** until the user presses **Scan**; scanning then runs for up to **30 seconds** before returning to the idle (camera off) state if nothing is found. A QR is accepted only when its payload is a **JSON object with a non-empty string `id`** — a valid code routes to `/scan/success?id=…`, anything else routes to `/scan/fail`.
   - **`/scan/success`** — success page a valid scan reroutes to; displays the decoded **`id`** (`?id=` query param) with a **Retry** action back to `/scan` (`ScanSuccess` page).
   - **`/scan/fail`** — failure page an invalid scan reroutes to; shows an "Invalid QR code" message with a **Retry** action back to `/scan` (`ScanFail` page).
-  - The Scan screen is reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`).
+  - The Scan screen is reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`). Nav visibility is **per-route**: a route hides the bar by setting `handle: { hideNav: true }` in the router config (`src/AppRoute/`), which `RootLayout` reads via `useMatches()`. The `/scan/success` and `/scan/fail` result screens hide it; `/scan` shows it.
 
 ## Getting Started
 
@@ -100,13 +100,13 @@ This app is an installable Progressive Web App, configured via `vite-plugin-pwa`
 
 ```
 src/
-├── AppRoute/        App routing
+├── AppRoute/        App routing + route-path constants (@/AppRoute/constant, @/AppRoute/helper)
 ├── assets/          Static assets
 ├── components/      Reusable components
 │   ├── ui/          Presentational components — styling only, no logic (incl. shadcn/ui)
 │   └── feature/     Reusable components with styling AND logic
 ├── hooks/           Reusable React hooks — @/hooks (e.g. useIsMobile)
-├── pages/           Page components
+├── pages/           Page components (child routes nest under the parent in a sub-pages/ folder, e.g. ScanQr/sub-pages/ScanSuccess)
 ├── utils/           Utilities (cn, env helpers) — @/utils
 ├── sw.ts            Custom service worker (app-shell precache)
 ├── main.tsx         App entry point

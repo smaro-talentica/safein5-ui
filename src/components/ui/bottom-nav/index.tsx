@@ -2,10 +2,6 @@ import { cn } from '@/utils/cn'
 import { NavLink } from 'react-router-dom'
 import { items } from './constant'
 
-/**
- * Fixed bottom navigation bar for the app's top-level screens. Presentational
- * only — navigation is delegated to React Router's NavLink.
- */
 export function BottomNav() {
   return (
     <nav

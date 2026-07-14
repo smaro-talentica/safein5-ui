@@ -8,7 +8,6 @@ import './global.css'
 
 const queryClient = new QueryClient()
 
-// Register the service worker (app-shell precaching for PWA install/offline).
 registerSW({ immediate: true })
 
 createRoot(document.getElementById('root')!).render(

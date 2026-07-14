@@ -3,21 +3,8 @@ import { cn } from '@/utils/cn'
 import { Download, Share, X } from 'lucide-react'
 import { useState } from 'react'
 
-/**
- * App-wide "install this app" banner. Fixed above the bottom nav, it appears
- * whenever the app is installable but not yet installed:
- *  - Chromium (Android Chrome / desktop Chrome/Edge): a real install button that
- *    triggers the browser prompt via the captured `beforeinstallprompt` event.
- *  - iOS Safari: no prompt API exists, so it shows the manual Share → Add to
- *    Home Screen instructions instead.
- *
- * It reappears on every visit until the user installs (or dismisses for the
- * current session). Render it once, high in the tree (e.g. in RootLayout).
- */
 export function InstallPrompt({ className }: { className?: string }) {
   const { canInstall, isIos, installed, promptInstall } = useInstallPrompt()
-  // Let the user dismiss for this session so it isn't nagging within a visit;
-  // it returns next visit (component remounts) until they install.
   const [dismissed, setDismissed] = useState(false)
 
   if (installed || dismissed) return null

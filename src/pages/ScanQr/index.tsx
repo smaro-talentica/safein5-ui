@@ -2,6 +2,8 @@ import { QrScanner } from '@/components/feature/QrScanner'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ROUTES } from '@/AppRoute/constant'
+import { to } from '@/AppRoute/helper'
 import { SCAN_TIMEOUT_MS } from './constant'
 import { resolveScanTarget } from './helper'
 
@@ -22,9 +24,9 @@ export function ScanQr() {
     (text: string) => {
       const result = resolveScanTarget(text)
       if (result.kind === 'ok') {
-        navigate(`/scan/success?id=${encodeURIComponent(result.id)}`)
+        navigate(to.scanSuccess(result.id))
       } else {
-        navigate('/scan/fail')
+        navigate(ROUTES.scanFail)
       }
     },
     [navigate],
