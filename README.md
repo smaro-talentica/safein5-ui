@@ -175,5 +175,6 @@ The `@` alias resolves to `src/`.
 - typescript-eslint
 - Prettier
 - Vitest
+- @vitest/coverage-v8 (unit-test coverage via `npx vitest run --coverage`)
 - jsdom
 - fake-indexeddb (IndexedDB in unit tests)

@@ -27,7 +27,7 @@ directory / `name:` frontmatter, **not** the folder's `skill-` prefix.
 | Skill | Invoke | Purpose |
 | --- | --- | --- |
 | `skills/skill-stitch-to-react/` | `/stitch-to-react` | Turn a UX design (Stitch screen, image, or textual description) into a **mobile-first** React component for this stack. Drives the Stitch MCP, delegates conversion to the `stitch-ui-designer` sub-agent, and writes the result to `stitch-export/<Name>.tsx` for human review and hand-placement. |
-| `skills/skill-debug-tests/` | `/debug-tests` | Two-stage failing-test workflow. Delegates triage to the read-only `test-runner` sub-agent (distills long Vitest logs into a structured failure summary), then hands off to the `debugger` sub-agent for the smallest safe fix + verification. Keeps test logs and debugging churn out of the main session. |
+| `skills/skill-pre-commit-tests/` | `/pre-commit-tests` | The single testing gate, run right before a commit. Reviews the logical changes in the working tree (via the `code-reviewer` sub-agent), authors meaningful tests for the changed pure-logic, fixes any broken tests (via the `debugger` sub-agent), generates the coverage report, and leaves everything uncommitted for the developer to review. |
 
 ## Sub-agents
 
@@ -38,8 +38,7 @@ frontmatter, not the filename.
 | --- | --- | --- |
 | `agents/sub-agent-stitch-ui-designer.md` | `stitch-ui-designer` | Converts UX → mobile-first React. Enforces Tailwind-only styling via `cn()`, `cva` for variants, shadcn theme tokens (no inline styles / hex), and TypeScript conventions. Writes to `stitch-export/`. |
 | `agents/sub-agent-code-reviewer.md` | `code-reviewer` | Read-only reviewer: correctness, React/hooks pitfalls, type safety, accessibility, and project-convention adherence. Never edits files. |
-| `agents/sub-agent-test-runner.md` | `test-runner` | **Read-only** test analyst. Runs `npx vitest run`, distills long logs into a structured failure summary (failing tests, key excerpts, likely source files). Never edits — hands off to `debugger`. |
-| `agents/sub-agent-debugger.md` | `debugger` | **Write-controlled** fixer. Consumes a `test-runner` summary, finds root cause, applies the smallest safe change, runs targeted + full verification, reports the diff. Never commits/pushes. |
+| `agents/sub-agent-debugger.md` | `debugger` | **Write-controlled** fixer. Consumes a failing-test summary, finds root cause, applies the smallest safe change, runs targeted + full verification, reports the diff. Never commits/pushes. |
 
 ## Hooks
 
