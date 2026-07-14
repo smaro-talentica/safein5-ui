@@ -20,10 +20,10 @@ A React + TypeScript single-page app built with Vite, with PWA support.
 
 ### Prerequisites
 
-- **Node.js** `>=24.17.0` (the version is pinned in `.nvmrc` — run `nvm use` to match)
+- **Node.js** `>=24.17.0` (the version is pinned in `.nvmrc` / `.node-version` — run `nvm use` to match)
 - **npm** `>=11.13.0`
 
-Versions are enforced via the `engines` field in `package.json`.
+Versions are enforced via the `engines` field and the pinned `packageManager` in `package.json`. `.npmrc` sets `engine-strict=true`, so `npm install` **fails** (rather than warns) on a mismatched Node/npm version.
 
 ### Recommended editor setup
 
