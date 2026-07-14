@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { env } from '@/utils/env'
 import { cn } from '@/utils/cn'
 import { extensionForMime, pickRecorderMimeType } from '@/utils/upload/recorder'
+import type { RecState, VideoRecorderProps } from './model'
 
 /**
  * VideoRecorder — in-app camera capture with a hard duration limit.
@@ -10,14 +11,6 @@ import { extensionForMime, pickRecorderMimeType } from '@/utils/upload/recorder'
  * the configured max (default 30s), enforcing the limit at capture time. On
  * stop it hands the recorded Blob (and its measured duration) back via onCapture.
  */
-export interface VideoRecorderProps {
-  onCapture: (result: { blob: Blob; filename: string; durationSec: number }) => void
-  onClose: () => void
-  className?: string
-}
-
-type RecState = 'idle' | 'requesting' | 'ready' | 'recording' | 'error'
-
 export function VideoRecorder({ onCapture, onClose, className }: VideoRecorderProps) {
   const maxSec = env.uploadMaxDurationSec
   const videoRef = useRef<HTMLVideoElement>(null)

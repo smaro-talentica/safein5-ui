@@ -3,7 +3,10 @@ import { cn } from '@/utils/cn'
 import { env } from '@/utils/env'
 import { useUpload } from '@/hooks/useUpload'
 import { VideoRecorder } from '@/components/feature/VideoRecorder'
-import type { UploadJobStatus, UploadProgress } from '@/utils/upload/types'
+import type { UploadProgress } from '@/utils/upload/types'
+import { ACCEPT, COLORS } from './constant'
+import { statusLabel, dashedBorder } from './helper'
+import type { VideoUploadProps } from './model'
 
 /**
  * VideoUpload — mobile-friendly capture/upload screen.
@@ -15,50 +18,6 @@ import type { UploadJobStatus, UploadProgress } from '@/utils/upload/types'
  * support Background Fetch. Progress shown here is driven by that manager, so it
  * persists across route changes.
  */
-
-const ACCEPT = 'video/mp4,video/quicktime,video/*'
-
-const COLORS = {
-  primary: '#4f46e5',
-  primaryText: '#ffffff',
-  primarySoft: '#e2dfff',
-  progress: '#10b981',
-  surface: '#f9f9ff',
-  card: '#ffffff',
-  onSurface: '#151c27',
-  onSurfaceVariant: '#464555',
-  outline: '#777587',
-  outlineVariant: '#c7c4d8',
-  track: '#e7eefe',
-  error: '#ba1a1a',
-} as const
-
-export interface VideoUploadProps {
-  className?: string
-}
-
-function statusLabel(status: UploadJobStatus): string {
-  switch (status) {
-    case 'queued':
-      return 'Queued…'
-    case 'uploading':
-      return 'Uploading…'
-    case 'completing':
-      return 'Finishing…'
-    case 'completed':
-      return 'Complete'
-    case 'paused':
-      return navigatorOnline() ? 'Paused' : 'Waiting for network…'
-    case 'error':
-      return 'Failed'
-    case 'canceled':
-      return 'Canceled'
-  }
-}
-
-function navigatorOnline(): boolean {
-  return typeof navigator === 'undefined' ? true : navigator.onLine
-}
 
 export function VideoUpload({ className }: VideoUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -84,11 +43,6 @@ export function VideoUpload({ className }: VideoUploadProps) {
     setDragging(false)
     void handleFile(e.dataTransfer.files?.[0])
   }
-
-  const dashedBorder = (color: string) =>
-    `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='${encodeURIComponent(
-      color,
-    )}' stroke-width='3' stroke-dasharray='6%2c 6' stroke-linecap='square'/%3e%3c/svg%3e")`
 
   return (
     <div

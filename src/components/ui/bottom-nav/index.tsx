@@ -1,19 +1,6 @@
 import { cn } from '@/utils/cn'
-import { ScanQrCode, Upload } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
-
-type NavItem = {
-  to: string
-  label: string
-  icon: typeof Upload
-  /** Match only the exact path (used for the index-style route). */
-  end?: boolean
-}
-
-const items: NavItem[] = [
-  { to: '/upload', label: 'Upload', icon: Upload },
-  { to: '/scan', label: 'Scan', icon: ScanQrCode },
-]
+import { items } from './constant'
 
 /**
  * Fixed bottom navigation bar for the app's top-level screens. Presentational

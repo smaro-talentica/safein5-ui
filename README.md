@@ -14,7 +14,7 @@ A React + TypeScript single-page app built with Vite, with PWA support.
   - **`/scan`** — camera-backed QR scanner (`ScanQr` page + `QrScanner` feature component using `@zxing/browser`, works on Android and iOS/PWA). **Mobile only**: on laptop/desktop it shows an "open on your phone" notice instead of the camera (`useIsMobile` hook). Append **`?force=1`** to bypass the gate and use a desktop webcam for local testing. The camera stays **off** until the user presses **Scan**; scanning then runs for up to **30 seconds** before returning to the idle (camera off) state if nothing is found. A QR is accepted only when its payload is a **JSON object with a non-empty string `id`** — a valid code routes to `/scan/success?id=…`, anything else routes to `/scan/fail`.
   - **`/scan/success`** — success page a valid scan reroutes to; displays the decoded **`id`** (`?id=` query param) with a **Retry** action back to `/scan` (`ScanSuccess` page).
   - **`/scan/fail`** — failure page an invalid scan reroutes to; shows an "Invalid QR code" message with a **Retry** action back to `/scan` (`ScanFail` page).
-  - The Upload and Scan screens are reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav.tsx`) with **Upload** and **Scan** entries.
+  - The Upload and Scan screens are reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`) with **Upload** and **Scan** entries.
 
 ## Getting Started
 

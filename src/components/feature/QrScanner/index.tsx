@@ -1,19 +1,8 @@
 import { cn } from '@/utils/cn'
 import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser'
 import { useEffect, useRef, useState } from 'react'
-
-type QrScannerProps = {
-  /**
-   * Called for each decoded QR code. Fires repeatedly while scanning (throttled
-   * to avoid spamming the same code), so the caller decides how to react — the
-   * scanner keeps running so the user can retry after an invalid code.
-   */
-  onDecode: (text: string) => void
-  className?: string
-}
-
-/** Ignore a repeat of the same decoded value within this window (ms). */
-const REPEAT_THROTTLE_MS = 1500
+import { REPEAT_THROTTLE_MS } from './constant'
+import type { QrScannerProps } from './model'
 
 /**
  * Camera-backed QR scanner. Uses ZXing's canvas decode loop so it works across
