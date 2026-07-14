@@ -3,10 +3,11 @@ import { InstallPrompt } from '@/components/feature/InstallPrompt'
 import { ScanFail } from '@/pages/ScanQr/sub-pages/ScanFail'
 import { ScanSuccess } from '@/pages/ScanQr/sub-pages/ScanSuccess'
 import { ScanQr } from '@/pages/ScanQr'
+import { UploadVideo } from '@/pages/UploadVideo'
 import { Navigate, RouterProvider, useMatches } from 'react-router-dom'
 import { createBrowserRouter, Outlet } from 'react-router-dom'
 import { cn } from '@/utils/cn'
-import { ROUTES, SCAN_SEGMENTS } from './constant'
+import { ROUTES, SCAN_SEGMENTS, UPLOAD_VIDEO_SEGMENT } from './constant'
 import { shouldShowNav } from './helper'
 import type { RouteHandle } from './model'
 
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
             handle: { hideNav: true } satisfies RouteHandle,
           },
         ],
+      },
+      {
+        path: UPLOAD_VIDEO_SEGMENT,
+        element: <UploadVideo />,
       },
     ],
   },

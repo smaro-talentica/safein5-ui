@@ -9,6 +9,7 @@ A React + TypeScript single-page app built with Vite, with PWA support.
   - **`/scan/success`** — success page a valid scan reroutes to; displays the decoded **`id`** (`?id=` query param) with a **Retry** action back to `/scan` (`ScanSuccess` page).
   - **`/scan/fail`** — failure page an invalid scan reroutes to; shows an "Invalid QR code" message with a **Retry** action back to `/scan` (`ScanFail` page).
   - The Scan screen is reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`). Nav visibility is **per-route**: a route hides the bar by setting `handle: { hideNav: true }` in the router config (`src/AppRoute/`), which `RootLayout` reads via `useMatches()`. The `/scan/success` and `/scan/fail` result screens hide it; `/scan` shows it.
+- **Upload Video** (**`/upload-video`**) — placeholder page (`UploadVideo`) reachable from the bottom navigation bar; the video upload flow is not yet implemented.
 
 ## Getting Started
 

@@ -3,6 +3,7 @@ export const ROUTES = {
   scan: '/scan',
   scanSuccess: '/scan/success',
   scanFail: '/scan/fail',
+  uploadVideo: '/upload-video',
 } as const
 
 export const SCAN_SEGMENTS = {
@@ -10,3 +11,5 @@ export const SCAN_SEGMENTS = {
   success: 'success',
   fail: 'fail',
 } as const
+
+export const UPLOAD_VIDEO_SEGMENT = 'upload-video'
