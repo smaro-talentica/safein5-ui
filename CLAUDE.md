@@ -71,6 +71,7 @@ Configured via `components.json` (style `default`, base color `slate`, CSS varia
 
 ## Conventions
 
+- **Do not add code comments.** Write self-explanatory code (clear names, small functions) instead of explanatory comments. Do not add block, line, or JSDoc comments to source files. The only exception is a directive comment that is functionally required by tooling (e.g. an `eslint-disable-*` line or a `@ts-expect-error`); use those only when necessary.
 - Prettier formats the codebase (`.prettierrc.json`); run `npm run format` before committing.
 - ESLint flat config (`eslint.config.js`) extends recommended JS/TS + react-hooks + react-refresh, with `eslint-config-prettier` last. Custom rules: 2-space `indent` and `no-tabs` are **errors**.
 - Tailwind CSS v4 is wired through the `@tailwindcss/vite` plugin (no `tailwind.config.js`).

@@ -9,7 +9,7 @@ A React + TypeScript single-page app built with Vite, with PWA support.
   - **`/scan/success`** — success page a valid scan reroutes to; displays the decoded **`id`** (`?id=` query param) with a **Retry** action back to `/scan` (`ScanSuccess` page).
   - **`/scan/fail`** — failure page an invalid scan reroutes to; shows an "Invalid QR code" message with a **Retry** action back to `/scan` (`ScanFail` page).
   - The Scan screen is reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`). Nav visibility is **per-route**: a route hides the bar by setting `handle: { hideNav: true }` in the router config (`src/AppRoute/`), which `RootLayout` reads via `useMatches()`. The `/scan/success` and `/scan/fail` result screens hide it; `/scan` shows it.
-- **Upload Video** (**`/upload-video`**) — placeholder page (`UploadVideo`) reachable from the bottom navigation bar; the video upload flow is not yet implemented.
+- **Upload Video** (**`/upload-video`**) — page (`UploadVideo`) reachable from the bottom navigation bar. Lets the user supply a video two ways: **Choose file** (a `video/*` file picker) or **Record** — an in-browser recorder (`VideoRecorder` feature component using `getUserMedia` + `MediaRecorder`, camera + mic, auto-stops at 60 s) that needs the same trusted-HTTPS secure context as the QR scanner. Once a video is recorded or chosen, it is previewed inline (name + size) and the recorder/file-picker are **locked** — no new recording is possible until the current video is either cancelled (**✕**, before upload) or uploaded. Upload **saves the video locally to IndexedDB** (database `safein5-videos`, store `videos`) rather than sending it to a server, persisting the blob on the device. After a save, a **Record another** action appears that **deletes the just-saved record from IndexedDB** and returns to the recorder — so at most one saved video persists at a time (a saved video only survives if the user navigates away instead of recording another). There is no server upload endpoint yet, and no UI to browse the stored videos.
 
 ## Getting Started
 
@@ -167,3 +167,4 @@ The `@` alias resolves to `src/`.
 - Vitest
 - @vitest/coverage-v8 (unit-test coverage via `npx vitest run --coverage`)
 - jsdom
+- fake-indexeddb (in-memory IndexedDB for testing the video-storage layer)
