@@ -1,4 +1,5 @@
 import { DB_NAME, DB_VERSION, STORE_NAME } from './constant'
+import type { StoredVideo } from './model'
 
 export function isIndexedDbAvailable(): boolean {
   return typeof indexedDB !== 'undefined'
@@ -35,4 +36,15 @@ export function awaitTransaction(tx: IDBTransaction): Promise<void> {
 
 export function makeVideoId(size: number): string {
   return `${Date.now()}-${size}-${Math.round(Math.random() * 1e9)}`
+}
+
+export function pickIdsToEvict(
+  videos: Pick<StoredVideo, 'id' | 'createdAt'>[],
+  limit: number,
+): string[] {
+  if (videos.length <= limit) return []
+  return [...videos]
+    .sort((a, b) => a.createdAt - b.createdAt)
+    .slice(0, videos.length - limit)
+    .map((video) => video.id)
 }

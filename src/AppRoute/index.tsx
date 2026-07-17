@@ -4,10 +4,11 @@ import { ScanFail } from '@/pages/ScanQr/sub-pages/ScanFail'
 import { ScanSuccess } from '@/pages/ScanQr/sub-pages/ScanSuccess'
 import { ScanQr } from '@/pages/ScanQr'
 import { UploadVideo } from '@/pages/UploadVideo'
+import { Videos } from '@/pages/Videos'
 import { Navigate, RouterProvider, useMatches } from 'react-router-dom'
 import { createBrowserRouter, Outlet } from 'react-router-dom'
 import { cn } from '@/utils/cn'
-import { ROUTES, SCAN_SEGMENTS, UPLOAD_VIDEO_SEGMENT } from './constant'
+import { ROUTES, SCAN_SEGMENTS, UPLOAD_VIDEO_SEGMENT, VIDEOS_SEGMENT } from './constant'
 import { shouldShowNav } from './helper'
 import type { RouteHandle } from './model'
 
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
       {
         path: UPLOAD_VIDEO_SEGMENT,
         element: <UploadVideo />,
+      },
+      {
+        path: VIDEOS_SEGMENT,
+        element: <Videos />,
       },
     ],
   },

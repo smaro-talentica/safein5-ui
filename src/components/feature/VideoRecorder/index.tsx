@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Circle, Square, Video } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MAX_RECORDING_MS } from './constant'
-import { pickMimeType } from './helper'
+import { formatDuration, pickMimeType } from './helper'
 import type { RecorderStatus, VideoRecorderProps } from './model'
 
 export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
@@ -12,9 +12,11 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<number | null>(null)
+  const intervalRef = useRef<number | null>(null)
 
   const [status, setStatus] = useState<RecorderStatus>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [secondsLeft, setSecondsLeft] = useState(MAX_RECORDING_MS / 1000)
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -32,7 +34,12 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
         )
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
+        video: {
+          facingMode: { ideal: 'environment' },
+          aspectRatio: { ideal: 9 / 16 },
+          width: { ideal: 720 },
+          height: { ideal: 1280 },
+        },
         audio: true,
       })
       streamRef.current = stream
@@ -61,6 +68,10 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
       window.clearTimeout(timerRef.current)
       timerRef.current = null
     }
+    if (intervalRef.current !== null) {
+      window.clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
   }, [])
 
   const stopRecording = useCallback(() => {
@@ -73,6 +84,9 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
     if (!stream) return
     chunksRef.current = []
     const mimeType = pickMimeType()
+    // TODO: MediaRecorder produces the browser's native format (webm/VP9 on Chrome/Android,
+    // mov/mp4 on Safari). Once an upload endpoint exists, normalize to H.264/AAC MP4 server-side
+    // for universal playback, and transcode to HLS for adaptive streaming at scale.
     const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
     recorderRef.current = recorder
 
@@ -90,7 +104,11 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
 
     recorder.start()
     setStatus('recording')
+    setSecondsLeft(MAX_RECORDING_MS / 1000)
     timerRef.current = window.setTimeout(stopRecording, MAX_RECORDING_MS)
+    intervalRef.current = window.setInterval(() => {
+      setSecondsLeft((prev) => Math.max(0, prev - 1))
+    }, 1000)
   }, [onRecorded, stopRecording])
 
   useEffect(() => {
@@ -118,7 +136,7 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
 
   return (
     <div className={cn('w-full max-w-sm space-y-3', className)}>
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-black">
+      <div className="relative aspect-9/16 w-full overflow-hidden rounded-xl bg-black">
         <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
         {status === 'idle' && (
           <div className="absolute inset-0 flex items-center justify-center text-white/70">
@@ -126,10 +144,18 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
           </div>
         )}
         {status === 'recording' && (
-          <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 text-xs font-medium text-white">
-            <Circle className="size-2.5 animate-pulse fill-red-500 text-red-500" aria-hidden />
-            REC
-          </span>
+          <>
+            <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 text-xs font-medium text-white">
+              <Circle className="size-2.5 animate-pulse fill-red-500 text-red-500" aria-hidden />
+              REC
+            </span>
+            <span
+              className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-1 text-xs font-medium tabular-nums text-white"
+              aria-live="polite"
+            >
+              {formatDuration(secondsLeft)}
+            </span>
+          </>
         )}
       </div>
 

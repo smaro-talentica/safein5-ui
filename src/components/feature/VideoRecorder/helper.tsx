@@ -5,6 +5,13 @@ export function pickMimeType(): string | undefined {
   return PREFERRED_MIME_TYPES.find((type) => MediaRecorder.isTypeSupported(type))
 }
 
+export function formatDuration(seconds: number): string {
+  const clamped = Math.max(0, seconds)
+  const mins = Math.floor(clamped / 60)
+  const secs = clamped % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   const units = ['KB', 'MB', 'GB']

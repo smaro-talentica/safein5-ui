@@ -1,9 +1,10 @@
-import { STORE_NAME } from './constant'
+import { MAX_STORED_VIDEOS, STORE_NAME } from './constant'
 import {
   awaitTransaction,
   isIndexedDbAvailable,
   makeVideoId,
   openVideoDb,
+  pickIdsToEvict,
   promisifyRequest,
 } from './helper'
 import type { StoredVideo } from './model'
@@ -25,9 +26,29 @@ export async function saveVideoToIndexedDb(blob: Blob, name: string): Promise<St
   const db = await openVideoDb()
   try {
     const tx = db.transaction(STORE_NAME, 'readwrite')
-    await promisifyRequest(tx.objectStore(STORE_NAME).put(record))
+    const store = tx.objectStore(STORE_NAME)
+    await promisifyRequest(store.put(record))
+    const all = await promisifyRequest(store.getAll() as IDBRequest<StoredVideo[]>)
+    for (const id of pickIdsToEvict(all, MAX_STORED_VIDEOS)) {
+      await promisifyRequest(store.delete(id))
+    }
     await awaitTransaction(tx)
     return record
+  } finally {
+    db.close()
+  }
+}
+
+export async function listVideosFromIndexedDb(): Promise<StoredVideo[]> {
+  if (!isIndexedDbAvailable()) return []
+
+  const db = await openVideoDb()
+  try {
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const all = await promisifyRequest(
+      tx.objectStore(STORE_NAME).getAll() as IDBRequest<StoredVideo[]>,
+    )
+    return all
   } finally {
     db.close()
   }

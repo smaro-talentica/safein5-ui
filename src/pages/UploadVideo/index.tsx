@@ -4,14 +4,16 @@ import { formatBytes } from '@/components/feature/VideoRecorder/helper'
 import { cn } from '@/utils/cn'
 import { Upload, Video, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { deleteVideoFromIndexedDb, saveVideoToIndexedDb } from './action'
+import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '@/AppRoute/constant'
+import { saveVideoToIndexedDb } from './action'
 import type { SelectedVideo, UploadMode } from './model'
 
 export function UploadVideo() {
+  const navigate = useNavigate()
   const [mode, setMode] = useState<UploadMode>('record')
   const [selected, setSelected] = useState<SelectedVideo | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [savedId, setSavedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -20,7 +22,6 @@ export function UploadVideo() {
       if (prev) URL.revokeObjectURL(prev.url)
       return { blob, url: URL.createObjectURL(blob), name, size: blob.size }
     })
-    setSavedId(null)
     setError(null)
   }, [])
 
@@ -29,7 +30,6 @@ export function UploadVideo() {
       if (prev) URL.revokeObjectURL(prev.url)
       return null
     })
-    setSavedId(null)
     setError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
@@ -58,18 +58,13 @@ export function UploadVideo() {
     setUploading(true)
     setError(null)
     try {
-      const record = await saveVideoToIndexedDb(selected.blob, selected.name)
-      setSavedId(record.id)
+      await saveVideoToIndexedDb(selected.blob, selected.name)
+      clearVideo()
+      navigate(ROUTES.videos)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save the video locally.')
-    } finally {
       setUploading(false)
     }
-  }
-
-  const handleRecordAnother = async () => {
-    if (savedId) await deleteVideoFromIndexedDb(savedId)
-    clearVideo()
   }
 
   return (
@@ -126,39 +121,21 @@ export function UploadVideo() {
       {selected && (
         <div className="space-y-3 rounded-xl border border-slate-200 p-3">
           <div className="overflow-hidden rounded-lg bg-black">
-            <video src={selected.url} controls className="aspect-square w-full object-contain" />
+            <video src={selected.url} controls className="aspect-9/16 w-full object-contain" />
           </div>
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-slate-900">{selected.name}</p>
               <p className="text-xs text-slate-500">{formatBytes(selected.size)}</p>
             </div>
-            {!savedId && (
-              <Button variant="ghost" size="icon" onClick={clearVideo} aria-label="Remove video">
-                <X className="size-4" aria-hidden />
-              </Button>
-            )}
+            <Button variant="ghost" size="icon" onClick={clearVideo} aria-label="Remove video">
+              <X className="size-4" aria-hidden />
+            </Button>
           </div>
           {error && <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
-          {savedId ? (
-            <>
-              <p className="rounded-md bg-green-50 px-3 py-2 text-center text-xs text-green-700">
-                Saved locally ✓
-              </p>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => void handleRecordAnother()}
-              >
-                <Video className="size-4" aria-hidden />
-                Record another
-              </Button>
-            </>
-          ) : (
-            <Button className="w-full" onClick={() => void handleUpload()} disabled={uploading}>
-              {uploading ? 'Saving…' : 'Upload'}
-            </Button>
-          )}
+          <Button className="w-full" onClick={() => void handleUpload()} disabled={uploading}>
+            {uploading ? 'Saving…' : 'Upload'}
+          </Button>
         </div>
       )}
     </div>
