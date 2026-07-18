@@ -35,11 +35,38 @@ Never read `import.meta.env` directly in components. Typed access is centralized
 
 ## Architecture
 
-- **Entry** (`src/main.tsx`): mounts `<AppRoute />` inside `QueryClientProvider` (TanStack React Query) wrapped in `StrictMode`. React Query Devtools are included.
-- **Routing** (`src/AppRoute/index.tsx`): a single `createBrowserRouter` config with a `RootLayout` (nav + `<Outlet />`) and child routes. Add new routes here. **Every routed component must live under `src/pages/<Name>/index.tsx`** — only page-level components are routed, and they always come from `pages/`.
-- **`@` alias** resolves to `src/` (configured in both `vite.config.ts` and `tsconfig.app.json`).
+- **Entry** (`src/main.tsx`): `<AppRoute />` inside `QueryClientProvider`, wrapped in `StrictMode`.
+- **Routing** (`src/AppRoute/index.tsx`): one `createBrowserRouter` with a `RootLayout` (nav +
+  `<Outlet />`) and child routes. Register every routed component here.
+- **`@` alias** → `src/` (in `vite.config.ts` + `tsconfig.app.json`).
 
-### Component conventions (enforced by directory)
+### Pages are partitioned by role (MANDATORY)
+
+`src/pages/` is split by the user role a screen serves. A routed component lives at
+`src/pages/<role>/<Name>/index.tsx` — **always follow this structure**:
+
+```
+src/pages/
+├── shared/       screens reachable by ANY role (e.g. ScanQr, Login, NotFound)
+├── worker/       role = WORKER      (Home, Feed, Capture, Learn, Profile)
+├── supervisor/   role = SUPERVISOR  (Dashboard, SignalReview, …) — add when built
+└── admin/        role = ADMIN       (Analytics, Tenants, Learn5Manager, …) — add when built
+```
+
+Rules:
+
+- Put a screen under `<role>/` **only if the role changes what the screen is**; role-agnostic
+  screens (QR scan, login, 404) go in `shared/`.
+- Do **not** create empty `supervisor/`/`admin/` trees ahead of need — add a role folder when its
+  first real screen is built.
+- Role-agnostic **building blocks** stay shared and role-unaware: reusable logic+UI in
+  `src/components/feature/` (e.g. `QrScanner`, `VideoRecorder`), pure presentation in
+  `src/components/ui/`, cross-cutting code in `src/hooks/` and `src/utils/`. Never split these by
+  role.
+- The bottom nav is per-role: `src/components/ui/bottom-nav/constant.tsx` currently lists the
+  worker tabs; when roles land it should be driven by the logged-in role.
+
+### Component layers (enforced by directory)
 
 - `src/components/ui/` — purely presentational, reusable building blocks. **Styling only, no business logic or state.** shadcn/ui components are added here.
 - `src/components/feature/` — reusable components combining **styling AND logic** (data fetching, state, behavior) for a feature.

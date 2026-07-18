@@ -65,7 +65,7 @@ For each changed **pure-logic** file lacking adjacent coverage for its new behav
   maps worth asserting, non-React hook logic. React/DOM/browser-bound changes
   (`index.tsx`, real `MediaRecorder`/`getUserMedia`, `window` events) → **report as a
   deferred gap** (the repo has no `@testing-library/react`); do not force brittle tests.
-- **Match the existing idiom exactly.** Study a current test first (`src/pages/ScanQr/
+- **Match the existing idiom exactly.** Study a current test first (`src/pages/shared/ScanQr/
   helper.test.ts` is a good example): co-locate `foo.ts → foo.test.ts`; `import { describe,
   expect, it, vi } from 'vitest'`; **inject/mock at the seam** (pass fakes like `() => 0`,
   mock `fetch` with `vi.fn()`); cover **happy + error + edge** branches, not one call.

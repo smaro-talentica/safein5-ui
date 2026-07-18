@@ -45,5 +45,9 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "github@claude-plugins-official": true,
+    "safein5@safein5-marketplace": true
   }
 }

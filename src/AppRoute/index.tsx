@@ -1,12 +1,25 @@
 import { BottomNav } from '@/components/ui/bottom-nav'
 import { InstallPrompt } from '@/components/feature/InstallPrompt'
-import { ScanFail } from '@/pages/ScanQr/sub-pages/ScanFail'
-import { ScanSuccess } from '@/pages/ScanQr/sub-pages/ScanSuccess'
-import { ScanQr } from '@/pages/ScanQr'
+import { ScanFail } from '@/pages/shared/ScanQr/sub-pages/ScanFail'
+import { ScanSuccess } from '@/pages/shared/ScanQr/sub-pages/ScanSuccess'
+import { ScanQr } from '@/pages/shared/ScanQr'
+import { Home } from '@/pages/worker/Home'
+import { Capture } from '@/pages/worker/Capture'
+import { Feed } from '@/pages/worker/Feed'
+import { Learn } from '@/pages/worker/Learn'
+import { Profile } from '@/pages/worker/Profile'
 import { Navigate, RouterProvider, useMatches } from 'react-router-dom'
 import { createBrowserRouter, Outlet } from 'react-router-dom'
 import { cn } from '@/utils/cn'
-import { ROUTES, SCAN_SEGMENTS } from './constant'
+import {
+  CAPTURE_SEGMENT,
+  FEED_SEGMENT,
+  HOME_SEGMENT,
+  LEARN_SEGMENT,
+  PROFILE_SEGMENT,
+  ROUTES,
+  SCAN_SEGMENTS,
+} from './constant'
 import { shouldShowNav } from './helper'
 import type { RouteHandle } from './model'
 
@@ -32,6 +45,10 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to={ROUTES.scan} replace /> },
       {
+        path: HOME_SEGMENT,
+        element: <Home />,
+      },
+      {
         path: SCAN_SEGMENTS.scan,
         children: [
           { index: true, element: <ScanQr /> },
@@ -46,6 +63,22 @@ const router = createBrowserRouter([
             handle: { hideNav: true } satisfies RouteHandle,
           },
         ],
+      },
+      {
+        path: FEED_SEGMENT,
+        element: <Feed />,
+      },
+      {
+        path: CAPTURE_SEGMENT,
+        element: <Capture />,
+      },
+      {
+        path: LEARN_SEGMENT,
+        element: <Learn />,
+      },
+      {
+        path: PROFILE_SEGMENT,
+        element: <Profile />,
       },
     ],
   },
