@@ -4,16 +4,22 @@ A React + TypeScript single-page app built with Vite, with PWA support.
 
 ## Features
 
-- **QR scan & reroute** (the app's default screen — `/` redirects to `/scan`) — a QR scanning flow that reads a JSON payload and reroutes based on it:
+- **Auth & role-based routing** — the app is gated by a login and partitioned into three roles: **worker**, **supervisor**, **admin**.
+  - **`/login`** — sign-in page (`Login`, `src/pages/shared/Login/`) with three fixed demo accounts (`worker@demo` / `supervisor@demo` / `admin@demo`, password `demo`). On sign-in it mints an unsigned (`alg: none`) JWT carrying **role + multi-tenant claims** (org + site) and stores it in `localStorage`; the current user, role, and tenant/site are derived by decoding that token (`src/auth/`, `useAuth` hook). There is no backend — this mirrors a real JWT flow locally.
+  - **Route guards** (`src/AppRoute/guard.tsx`): unauthenticated users are redirected to `/login`; a user visiting a route outside their role is redirected to their own home. **`/`** redirects to the logged-in role's home — worker → `/home`, supervisor → `/dashboard`, admin → `/analytics`.
+  - The **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`) is **role-driven** (`navItemsByRole`): workers see **Home, Scan, Feed, Capture, Learn, Profile**; supervisors see **Dashboard, Signals, Profile**; admins see **Analytics, Tenants, Profile**. Nav visibility is also **per-route**: a route hides the bar by setting `handle: { hideNav: true }` in the router config, which `RootLayout` reads via `useMatches()` (e.g. `/login` and the `/scan` result screens hide it).
+- **QR scan & reroute** — a QR scanning flow that reads a JSON payload and reroutes based on it:
   - **`/scan`** — camera-backed QR scanner (`ScanQr` page + `QrScanner` feature component using `@zxing/browser`, works on Android and iOS/PWA). **Mobile only**: on laptop/desktop it shows an "open on your phone" notice instead of the camera (`useIsMobile` hook). Append **`?force=1`** to bypass the gate and use a desktop webcam for local testing. The camera stays **off** until the user presses **Scan**; scanning then runs for up to **30 seconds** before returning to the idle (camera off) state if nothing is found. A QR is accepted only when its payload is a **JSON object with a non-empty string `id`** — a valid code routes to `/scan/success?id=…`, anything else routes to `/scan/fail`.
   - **`/scan/success`** — success page a valid scan reroutes to; displays the decoded **`id`** (`?id=` query param) with a **Retry** action back to `/scan` (`ScanSuccess` page).
   - **`/scan/fail`** — failure page an invalid scan reroutes to; shows an "Invalid QR code" message with a **Retry** action back to `/scan` (`ScanFail` page).
-  - The Scan screen is reachable from a **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`) with six tabs: **Home**, **Scan**, **Feed**, **Capture**, **Learn**, **Profile**. Nav visibility is **per-route**: a route hides the bar by setting `handle: { hideNav: true }` in the router config (`src/AppRoute/`), which `RootLayout` reads via `useMatches()`. The `/scan/success` and `/scan/fail` result screens hide it; `/scan` shows it.
+  - `/scan` (and its result screens) are **shared** across all roles.
 - **Capture** (**`/capture`**) — page (`Capture`) reachable from the bottom navigation bar. Lets the user supply a video two ways: **Choose file** (a `video/*` file picker) or **Record** — an in-browser recorder (`VideoRecorder` feature component using `getUserMedia` + `MediaRecorder`, camera + mic, auto-stops at 60 s with a live countdown of the time left shown in the recorder) that needs the same trusted-HTTPS secure context as the QR scanner. Once a video is recorded or chosen, it is previewed inline (name + size) and the recorder/file-picker are **locked** — no new recording is possible until the current video is either cancelled (**✕**, before upload) or uploaded. Upload **saves the video locally to IndexedDB** (database `safein5-videos`, store `videos`) rather than sending it to a server, persisting the blob on the device; after saving it navigates to the **Feed** tab. Saved videos accumulate in IndexedDB up to a **cap of 5 (most recent)**: on saving a 6th, the **oldest** record (by `createdAt`) is evicted (FIFO). There is no server upload endpoint yet; saved videos can be browsed and removed on the **Feed** tab (below).
 - **Feed** (**`/feed`**) — page (`Feed`) reachable from the bottom navigation bar. Lists all locally saved videos from IndexedDB **newest to oldest**, each with an inline preview, name, size, and recorded-at timestamp, plus a **delete** action to remove it manually. Reads and deletes are done through **TanStack Query** (`useVideosQuery` / `useDeleteVideoMutation`), so the list refreshes automatically after a delete. Shows an empty state when nothing is saved.
-- **Learn** (**`/learn`**) — page (`Learn`) reachable from the bottom navigation bar. Placeholder screen with no content yet.
-- **Profile** (**`/profile`**) — page (`Profile`) reachable from the bottom navigation bar. Placeholder screen with no content yet.
-- **Home** (**`/home`**) — page (`Home`) reachable from the bottom navigation bar (first tab). Placeholder screen with no content yet.
+- **Learn** (**`/learn`**, worker) — page (`Learn`). Placeholder screen with no content yet.
+- **Profile** (**`/profile`**, shared) — page (`Profile`, `src/pages/shared/Profile/`) reachable by any role. Shows the signed-in user's name, email, role, organisation, and site (decoded from the JWT), with a **Sign out** action that clears the token and returns to `/login`.
+- **Home** (**`/home`**, worker) — page (`Home`). Placeholder screen with no content yet.
+- **Supervisor** placeholder screens (empty for now): **Dashboard** (**`/dashboard`**) and **Signals** (**`/signals`**).
+- **Admin** placeholder screens (empty for now): **Analytics** (**`/analytics`**) and **Tenants** (**`/tenants`**).
 
 ## Getting Started
 
@@ -98,20 +104,21 @@ This app is an installable Progressive Web App, configured via `vite-plugin-pwa`
 - **Custom service worker** (`src/sw.ts`, `injectManifest` strategy) — Workbox app-shell precaching, kept as a custom SW so app-specific behavior can be added later.
 - Web app manifest (standalone display, theme/background colors, 192/512 icons incl. maskable)
 - Offline asset precaching via Workbox (`js`, `css`, `html`, `ico`, `png`, `svg`, `woff2`)
-- **Custom install prompt** — an in-app banner (`InstallPrompt`, `src/components/feature/InstallPrompt/`, driven by the `useInstallPrompt` hook) offers "Add to Home Screen" on every visit until the app is installed. On Chromium (Android Chrome / desktop Chrome/Edge) it triggers the native prompt via the captured `beforeinstallprompt` event; on iOS Safari (which has no such API) it shows the manual Share → Add to Home Screen steps. Note: browsers only expose the prompt after the app is installable **and** the user has engaged with the page — never on the very first paint.
+- **Custom install prompt** — an in-app banner (`InstallPrompt`, `src/components/feature/InstallPrompt/`, driven by the `useInstallPrompt` hook) offers "Add to Home Screen" until the app is installed, including on the logged-out `/login` screen. Install detection is app-wide: an `InstallPromptProvider` mounted at the app root captures the one-shot `beforeinstallprompt` event regardless of the current route, so it is not missed on the entry screen. On Chromium (Android Chrome / desktop Chrome/Edge) it triggers the native prompt via that captured event; on iOS Safari (which has no such API) it shows the manual Share → Add to Home Screen steps. Note: browsers only expose the prompt after the app is installable **and** the user has engaged with the page — never on the very first paint.
 - The service worker and manifest are also enabled in **dev** (`devOptions` in `vite-plugin-pwa`), so installability can be tested with `npm run dev` without a production build.
 
 ## Project Structure
 
 ```
 src/
-├── AppRoute/        App routing + route-path constants (@/AppRoute/constant, @/AppRoute/helper)
+├── AppRoute/        App routing + route-path constants + role guards (@/AppRoute/constant, guard, helper)
 ├── assets/          Static assets
+├── auth/            Client-side auth: JWT mint/decode, localStorage token store, AuthProvider/context, demo accounts
 ├── components/      Reusable components
 │   ├── ui/          Presentational components — styling only, no logic (incl. shadcn/ui)
 │   └── feature/     Reusable components with styling AND logic
-├── hooks/           Reusable React hooks — @/hooks (e.g. useIsMobile)
-├── pages/           Page components, partitioned by user role: shared/ (any role, e.g. ScanQr), worker/ (Home, Feed, Capture, Learn, Profile). Child routes nest under the parent in a sub-pages/ folder, e.g. shared/ScanQr/sub-pages/ScanSuccess
+├── hooks/           Reusable React hooks — @/hooks (e.g. useIsMobile, useAuth)
+├── pages/           Page components, partitioned by user role: shared/ (any role, e.g. Login, Profile, ScanQr), worker/ (Home, Feed, Capture, Learn), supervisor/ (Dashboard, Signals), admin/ (Analytics, Tenants). Child routes nest under the parent in a sub-pages/ folder, e.g. shared/ScanQr/sub-pages/ScanSuccess
 ├── utils/           Utilities (cn, env helpers) — @/utils
 ├── sw.ts            Custom service worker (app-shell precache)
 ├── main.tsx         App entry point

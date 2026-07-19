@@ -1,8 +1,14 @@
 import { cn } from '@/utils/cn'
 import { NavLink } from 'react-router-dom'
-import { items } from './constant'
+import { useAuth } from '@/hooks/useAuth'
+import { navItemsByRole } from './constant'
 
 export function BottomNav() {
+  const { user } = useAuth()
+  if (!user) return null
+
+  const items = navItemsByRole[user.role]
+
   return (
     <nav
       className="shrink-0 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
