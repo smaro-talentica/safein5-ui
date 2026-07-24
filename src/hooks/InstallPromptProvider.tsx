@@ -23,6 +23,30 @@ function isIosDevice(): boolean {
   return iOsDevice || iPadOs
 }
 
+function isAndroidFirefoxBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  return /Android/i.test(ua) && /Firefox/i.test(ua)
+}
+
+// Opera Mobile is Chromium-based but does not reliably fire beforeinstallprompt
+// (reported on Opera's own forums), so it needs the same manual-instructions fallback
+// as Firefox rather than relying on the native prompt.
+function isAndroidOperaBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  return /Android/i.test(ua) && /(OPR\/|Opera)/i.test(ua)
+}
+
+// Edge Android also does not reliably fire beforeinstallprompt (reported on Microsoft's
+// own community/Q&A forums) and its "..." menu install often just creates a shortcut
+// rather than a true install, so it gets the same manual-instructions fallback.
+function isAndroidEdgeBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  return /Android/i.test(ua) && /EdgA/i.test(ua)
+}
+
 export function InstallPromptProvider({ children }: { children: ReactNode }) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState<boolean>(isStandalone)
@@ -50,6 +74,10 @@ export function InstallPromptProvider({ children }: { children: ReactNode }) {
       canInstall: !installed && deferred !== null,
       installed,
       isIos: !installed && isIosDevice(),
+      isAndroidManualInstall:
+        !installed &&
+        deferred === null &&
+        (isAndroidFirefoxBrowser() || isAndroidOperaBrowser() || isAndroidEdgeBrowser()),
       promptInstall: async () => {
         if (!deferred) return 'unavailable'
         await deferred.prompt()

@@ -20,11 +20,11 @@ export default defineConfig(({ command }) => ({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      includeAssets: ['favicon.svg', 'icons.svg'],
+      includeAssets: ['favicon.svg', 'icons.svg', 'pwa.png'],
       manifest: {
-        name: 'Fast in 5',
-        short_name: 'Fast in 5',
-        description: 'Fast in 5 PWA',
+        name: 'Safe in 5',
+        short_name: 'Safe in 5',
+        description: 'Safe in 5 PWA',
         theme_color: '#e0f2fe',
         background_color: '#e0f2fe',
         display: 'standalone',
@@ -32,20 +32,9 @@ export default defineConfig(({ command }) => ({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
+            src: 'pwa.png',
+            sizes: '192x192 512x512',
             type: 'image/png',
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable',
           },
         ],
       },

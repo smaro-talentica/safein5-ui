@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-SafeIn5 UI (package name `fe-fastin5`, PWA name "Fast in 5") — a React 19 + TypeScript SPA built with Vite, with installable PWA support. Requires Node `>=24.17.0` and npm `>=11.13.0` (pinned in `.nvmrc` / enforced via `engines`).
+SafeIn5 UI (package name `fe-safein5`, PWA name "Safe in 5") — a React 19 + TypeScript SPA built with Vite, with installable PWA support. Requires Node `>=24.17.0` and npm `>=11.13.0` (pinned in `.nvmrc` / enforced via `engines`).
 
 ### MVP roadmap (approved plan)
 

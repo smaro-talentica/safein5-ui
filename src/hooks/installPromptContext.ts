@@ -4,6 +4,7 @@ export type InstallPromptValue = {
   canInstall: boolean
   installed: boolean
   isIos: boolean
+  isAndroidManualInstall: boolean
   promptInstall: () => Promise<'accepted' | 'dismissed' | 'unavailable'>
 }
 
