@@ -20,7 +20,7 @@ export default defineConfig(({ command }) => ({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      includeAssets: ['favicon.svg', 'icons.svg', 'pwa.png'],
+      includeAssets: ['favicon.svg', 'icons.svg', 'pwa.png', 'pwa-maskable.png'],
       manifest: {
         name: 'Safe in 5',
         short_name: 'Safe in 5',
@@ -35,6 +35,13 @@ export default defineConfig(({ command }) => ({
             src: 'pwa.png',
             sizes: '192x192 512x512',
             type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'pwa-maskable.png',
+            sizes: '1024x1024',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },
