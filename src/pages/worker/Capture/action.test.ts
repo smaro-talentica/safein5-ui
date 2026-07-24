@@ -1,8 +1,36 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { deleteVideoFromIndexedDb, saveVideoToIndexedDb } from './action'
+import {
+  deleteUploadSession,
+  deleteVideoFromIndexedDb,
+  getUploadSession,
+  listPendingUploadSessions,
+  saveUploadSession,
+  saveVideoToIndexedDb,
+} from './action'
 import { openVideoDb, promisifyRequest } from './helper'
 import { STORE_NAME } from './constant'
+import type { UploadSession } from './model'
+
+function makeSession(overrides: Partial<UploadSession> = {}): UploadSession {
+  const now = Date.now()
+  return {
+    id: 'video-1',
+    filename: 'clip.webm',
+    mime: 'video/webm',
+    size: 100,
+    chunkSize: 50,
+    chunkCount: 2,
+    chunks: [
+      { chunkNumber: 1, start: 0, end: 50, status: 'pending' },
+      { chunkNumber: 2, start: 50, end: 100, status: 'pending' },
+    ],
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  }
+}
 
 async function readAll() {
   const db = await openVideoDb()
@@ -75,6 +103,54 @@ describe('deleteVideoFromIndexedDb', () => {
     globalThis.indexedDB = undefined as unknown as IDBFactory
     try {
       await expect(deleteVideoFromIndexedDb('anything')).resolves.toBeUndefined()
+    } finally {
+      globalThis.indexedDB = original
+    }
+  })
+})
+
+describe('upload session CRUD', () => {
+  beforeEach(() => {
+    indexedDB.deleteDatabase('safein5-videos')
+  })
+
+  it('saves and retrieves an upload session by id', async () => {
+    const session = makeSession()
+    await saveUploadSession(session)
+
+    const found = await getUploadSession(session.id)
+    expect(found).toEqual(session)
+  })
+
+  it('returns undefined for an unknown session id', async () => {
+    await expect(getUploadSession('missing')).resolves.toBeUndefined()
+  })
+
+  it('deletes a previously saved session', async () => {
+    const session = makeSession()
+    await saveUploadSession(session)
+
+    await deleteUploadSession(session.id)
+    await expect(getUploadSession(session.id)).resolves.toBeUndefined()
+  })
+
+  it('lists only sessions that are not completed', async () => {
+    await saveUploadSession(makeSession({ id: 'a', status: 'pending' }))
+    await saveUploadSession(makeSession({ id: 'b', status: 'uploading' }))
+    await saveUploadSession(makeSession({ id: 'c', status: 'completed' }))
+
+    const pending = await listPendingUploadSessions()
+    expect(pending.map((s) => s.id).sort()).toEqual(['a', 'b'])
+  })
+
+  it('upload-session helpers are no-ops/undefined when IndexedDB is unavailable', async () => {
+    const original = globalThis.indexedDB
+    globalThis.indexedDB = undefined as unknown as IDBFactory
+    try {
+      await expect(saveUploadSession(makeSession())).resolves.toBeUndefined()
+      await expect(getUploadSession('x')).resolves.toBeUndefined()
+      await expect(deleteUploadSession('x')).resolves.toBeUndefined()
+      await expect(listPendingUploadSessions()).resolves.toEqual([])
     } finally {
       globalThis.indexedDB = original
     }

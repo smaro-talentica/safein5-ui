@@ -6,7 +6,7 @@ import { Upload, Video, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/AppRoute/constant'
-import { saveVideoToIndexedDb } from './action'
+import { saveVideoAndQueueUpload } from './action'
 import type { SelectedVideo, UploadMode } from './model'
 
 export function Capture() {
@@ -58,7 +58,7 @@ export function Capture() {
     setUploading(true)
     setError(null)
     try {
-      await saveVideoToIndexedDb(selected.blob, selected.name)
+      await saveVideoAndQueueUpload(selected.blob, selected.name)
       clearVideo()
       navigate(ROUTES.feed)
     } catch (err) {

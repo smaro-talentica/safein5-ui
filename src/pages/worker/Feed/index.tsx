@@ -1,13 +1,75 @@
 import { Button } from '@/components/ui/button'
 import { formatBytes } from '@/components/feature/VideoRecorder/helper'
-import { Film, Trash2 } from 'lucide-react'
+import { Film, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
-import { formatRecordedAt } from './helper'
-import { useDeleteVideoMutation, useVideosQuery } from './query'
+import type { StoredVideo } from '@/pages/worker/Capture/model'
+import { formatRecordedAt, formatUploadStatus } from './helper'
+import {
+  useCancelUploadMutation,
+  useDeleteVideoMutation,
+  useUploadSessionQuery,
+  useVideosQuery,
+} from './query'
+
+function VideoCard({ video, url }: { video: StoredVideo; url: string }) {
+  const deleteVideo = useDeleteVideoMutation()
+  const cancelUpload = useCancelUploadMutation()
+  const { data: uploadSession } = useUploadSessionQuery(video.id)
+  const uploadStatus = formatUploadStatus(uploadSession)
+  const isUploadInProgress =
+    uploadSession?.status === 'pending' || uploadSession?.status === 'uploading'
+
+  return (
+    <div className="space-y-3 rounded-xl border border-slate-200 p-3">
+      <div className="overflow-hidden rounded-lg bg-black">
+        <video src={url} controls className="aspect-9/16 w-full object-contain" />
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-slate-900">{video.name}</p>
+          <p className="text-xs text-slate-500">
+            {formatBytes(video.size)} · {formatRecordedAt(video.createdAt)}
+          </p>
+          {uploadStatus && (
+            <p
+              className={
+                uploadSession?.status === 'error'
+                  ? 'text-xs text-red-600'
+                  : 'text-xs text-slate-500'
+              }
+            >
+              {uploadStatus}
+            </p>
+          )}
+        </div>
+        {isUploadInProgress ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Cancel upload"
+            disabled={cancelUpload.isPending}
+            onClick={() => cancelUpload.mutate(video.id)}
+          >
+            <X className="size-4 text-red-600" aria-hidden />
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Delete video"
+            disabled={deleteVideo.isPending}
+            onClick={() => deleteVideo.mutate(video.id)}
+          >
+            <Trash2 className="size-4 text-red-600" aria-hidden />
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export function Feed() {
   const { data: videos, isPending, isError } = useVideosQuery()
-  const deleteVideo = useDeleteVideoMutation()
 
   const urls = useMemo(() => {
     const map = new Map<string, string>()
@@ -43,32 +105,7 @@ export function Feed() {
       {!isPending &&
         !isError &&
         videos.map((video) => (
-          <div key={video.id} className="space-y-3 rounded-xl border border-slate-200 p-3">
-            <div className="overflow-hidden rounded-lg bg-black">
-              <video
-                src={urls.get(video.id)}
-                controls
-                className="aspect-9/16 w-full object-contain"
-              />
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-slate-900">{video.name}</p>
-                <p className="text-xs text-slate-500">
-                  {formatBytes(video.size)} · {formatRecordedAt(video.createdAt)}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Delete video"
-                disabled={deleteVideo.isPending}
-                onClick={() => deleteVideo.mutate(video.id)}
-              >
-                <Trash2 className="size-4 text-red-600" aria-hidden />
-              </Button>
-            </div>
-          </div>
+          <VideoCard key={video.id} video={video} url={urls.get(video.id) ?? ''} />
         ))}
     </div>
   )

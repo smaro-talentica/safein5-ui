@@ -1,5 +1,6 @@
 import { BottomNav } from '@/components/ui/bottom-nav'
 import { InstallPrompt } from '@/components/feature/InstallPrompt'
+import { VideoUploader } from '@/components/feature/VideoUploader'
 import { ScanFail } from '@/pages/shared/ScanQr/sub-pages/ScanFail'
 import { ScanSuccess } from '@/pages/shared/ScanQr/sub-pages/ScanSuccess'
 import { ScanQr } from '@/pages/shared/ScanQr'
@@ -114,6 +115,7 @@ export default function AppRoute() {
   return (
     <AuthProvider>
       <InstallPromptProvider>
+        <VideoUploader />
         <RouterProvider router={router} />
       </InstallPromptProvider>
     </AuthProvider>
