@@ -2,14 +2,16 @@ import { Button } from '@/components/ui/button'
 import { InstallPrompt } from '@/components/feature/InstallPrompt'
 import { useAuth } from '@/hooks/useAuth'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ROLE_HOME } from '@/AppRoute/constant'
+import type { LoginLocationState } from '@/AppRoute/model'
 import { DEMO_ACCOUNTS } from '@/auth/accounts'
 import { cn } from '@/utils/cn'
 
 export function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +23,8 @@ export function Login() {
       setError(result.error)
       return
     }
-    navigate(ROLE_HOME[result.user.role], { replace: true })
+    const from = (location.state as LoginLocationState | null)?.from
+    navigate(from || ROLE_HOME[result.user.role], { replace: true })
   }
 
   return (
