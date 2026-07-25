@@ -1,7 +1,7 @@
 import { QrScanner } from '@/components/feature/QrScanner'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ROUTES } from '@/AppRoute/constant'
 import { to } from '@/AppRoute/helper'
 import { SCAN_TIMEOUT_MS } from './constant'
@@ -10,6 +10,7 @@ import { resolveScanTarget } from './helper'
 export function ScanQr() {
   const isMobile = useIsMobile()
   const navigate = useNavigate()
+  const { code } = useParams()
   const [searchParams] = useSearchParams()
   const forceDesktop = searchParams.get('force') === '1'
   const [active, setActive] = useState(searchParams.get('auto') === '1')
@@ -33,6 +34,11 @@ export function ScanQr() {
   )
 
   const handleScan = useCallback(() => setActive(true), [])
+
+  if (code !== undefined) {
+    const id = code.trim()
+    return <Navigate to={id ? to.scanSuccess(id) : ROUTES.scanFail} replace />
+  }
 
   if (!isMobile && !forceDesktop) {
     return (

@@ -117,6 +117,11 @@ const router = createBrowserRouter([
                 element: <ScanFail />,
                 handle: { hideNav: true } satisfies RouteHandle,
               },
+              {
+                path: SCAN_SEGMENTS.code,
+                element: <ScanQr />,
+                handle: { hideNav: true } satisfies RouteHandle,
+              },
             ],
           },
         ],

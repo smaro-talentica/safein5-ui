@@ -21,6 +21,7 @@ export const SCAN_SEGMENTS = {
   scan: 'scan',
   success: 'success',
   fail: 'fail',
+  code: ':code',
 } as const
 
 export const LOGIN_SEGMENT = 'login'

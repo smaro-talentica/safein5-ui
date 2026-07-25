@@ -1,25 +1,24 @@
+import { SCAN_SEGMENTS } from '@/AppRoute/constant'
 import type { ScanResult } from './model'
+
+const RESERVED_SCAN_CODES: string[] = [SCAN_SEGMENTS.success, SCAN_SEGMENTS.fail]
 
 export function resolveScanTarget(text: string): ScanResult {
   const value = text.trim()
   if (!value) return { kind: 'invalid' }
 
-  let payload: unknown
+  let url: URL
   try {
-    payload = JSON.parse(value)
+    url = new URL(value)
   } catch {
     return { kind: 'invalid' }
   }
 
-  if (
-    typeof payload !== 'object' ||
-    payload === null ||
-    !('id' in payload) ||
-    typeof (payload as { id: unknown }).id !== 'string' ||
-    !(payload as { id: string }).id.trim()
-  ) {
-    return { kind: 'invalid' }
-  }
+  const segments = url.pathname.split('/').filter(Boolean)
+  if (segments.length !== 2 || segments[0] !== SCAN_SEGMENTS.scan) return { kind: 'invalid' }
 
-  return { kind: 'ok', id: (payload as { id: string }).id }
+  const id = decodeURIComponent(segments[1])
+  if (!id.trim() || RESERVED_SCAN_CODES.includes(id)) return { kind: 'invalid' }
+
+  return { kind: 'ok', id }
 }

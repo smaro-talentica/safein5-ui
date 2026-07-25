@@ -5,6 +5,7 @@ import type { RouteHandle } from './model'
 export const to = {
   scanAuto: (): string => `${ROUTES.scan}?auto=1`,
   scanSuccess: (id: string): string => `${ROUTES.scanSuccess}?id=${encodeURIComponent(id)}`,
+  scanDeepLink: (id: string): string => `${ROUTES.scan}/${encodeURIComponent(id)}`,
 } as const
 
 export function shouldShowNav(matches: UIMatch[]): boolean {
