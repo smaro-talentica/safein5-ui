@@ -266,7 +266,8 @@ reacts differently per code — as of this writing it does not.
 
 For the **direct S3 chunk PUTs** (not the backend endpoint), the client retries on **any**
 failure (non-2xx response, or a 2xx missing the `ETag` header) up to a fixed retry count with
-exponential backoff (`MAX_CHUNK_RETRIES`, currently 3 attempts). This is **not** error-code-aware
+exponential backoff (`MAX_CHUNK_RETRIES`, currently 3 — i.e. 1 initial attempt plus 3 retries,
+4 attempts total). This is **not** error-code-aware
 — a `403` (e.g. an expired presigned URL) and a `5xx` are retried identically, and the retry is
 always a plain re-`PUT` to the **same URL** already in hand. The client does **not** call
 `/uploads/next` again to get a fresh URL before retrying — if a presigned URL genuinely expires

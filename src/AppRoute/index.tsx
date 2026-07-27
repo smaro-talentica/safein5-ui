@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BottomNav } from '@/components/ui/bottom-nav'
 import { InstallPrompt } from '@/components/feature/InstallPrompt'
 import { VideoUploader } from '@/components/feature/VideoUploader'
+import { AudioUploader } from '@/components/feature/AudioUploader'
 import { RouterProvider, useMatches } from 'react-router-dom'
 import { createBrowserRouter, Outlet } from 'react-router-dom'
 import { cn } from '@/utils/cn'
@@ -163,6 +164,7 @@ export default function AppRoute() {
     <AuthProvider>
       <InstallPromptProvider>
         <VideoUploader />
+        <AudioUploader />
         <RouterProvider router={router} />
       </InstallPromptProvider>
     </AuthProvider>

@@ -1,4 +1,4 @@
-export type VideoRecorderProps = {
+export type AudioRecorderProps = {
   onRecorded: (blob: Blob) => void
   className?: string
 }

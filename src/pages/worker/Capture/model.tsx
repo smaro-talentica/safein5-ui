@@ -1,4 +1,8 @@
-export type UploadMode = 'choose' | 'record'
+export type CaptureSection = 'video' | 'audio' | 'text'
+
+export type VideoMode = 'record' | 'choose'
+
+export type TextMode = 'write' | 'record'
 
 export type SelectedVideo = {
   blob: Blob
@@ -57,3 +61,68 @@ export type NextChunkResponse =
       status: 'completed'
       videoId: string
     }
+
+export type StoredAudio = {
+  id: string
+  blob: Blob
+  name: string
+  size: number
+  type: string
+  createdAt: number
+}
+
+export type AudioUploadStatus = 'pending' | 'uploading' | 'completed' | 'error'
+
+export type AudioUploadRecord = {
+  /** Same id as the source StoredAudio. */
+  id: string
+  status: AudioUploadStatus
+  /** S3 object key once presigned/uploaded, so a resumed upload can skip re-presigning. */
+  s3Key?: string
+  error?: string
+  createdAt: number
+  updatedAt: number
+}
+
+/**
+ * Response from the backend when asking for a one-shot presigned S3 PUT URL for an audio clip.
+ * Unlike the video flow's `NextChunkResponse`, this is a single URL for the whole file — no
+ * multipart/chunking handshake, since audio clips are small (see BACKEND_AUDIO_UPLOAD_SPEC.md).
+ */
+export type AudioPresignResponse = {
+  /** S3 object key the backend chose — echoed back on later calls (e.g. start-transcription). */
+  s3Key: string
+  /** Presigned PUT URL the client uploads the raw audio bytes to, directly, from the browser. */
+  url: string
+}
+
+export type TranscriptionJobStatus = 'queued' | 'in_progress' | 'completed' | 'failed'
+
+/**
+ * Response from the backend after asking it to start an AWS Transcribe job against an
+ * already-uploaded S3 audio object. The client polls `GET` on this job until it reaches a
+ * terminal status (`completed` / `failed`).
+ */
+export type TranscriptionJobResponse = {
+  jobId: string
+  status: TranscriptionJobStatus
+  /** Present only once status is `completed`. */
+  text?: string
+  /** Present only once status is `failed`. */
+  error?: string
+}
+
+/**
+ * A saved entry from the Capture "Text" tab — either typed directly, or transcribed from a
+ * voice memo (the audio itself is discarded once the worker taps Confirm; only the resulting
+ * text is kept). Local-only for now (IndexedDB) — no S3 upload, no backend call. See the
+ * Capture "Text" tab: this is intentionally NOT a `StoredAudio`/`StoredVideo` — there is no
+ * blob, no upload-status tracking, and no background uploader for it yet.
+ */
+export type StoredTextEntry = {
+  id: string
+  text: string
+  /** How this entry was produced — informational, doesn't change how it's stored/displayed. */
+  source: 'written' | 'transcribed'
+  createdAt: number
+}

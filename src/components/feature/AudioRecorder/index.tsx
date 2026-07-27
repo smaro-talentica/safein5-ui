@@ -1,13 +1,12 @@
 import { cn } from '@/utils/cn'
 import { Button } from '@/components/ui/button'
-import { Circle, Square, Video } from 'lucide-react'
+import { Circle, Mic, Square } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MAX_RECORDING_MS } from './constant'
 import { formatDuration, pickMimeType } from './helper'
-import type { RecorderStatus, VideoRecorderProps } from './model'
+import type { AudioRecorderProps, RecorderStatus } from './model'
 
-export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
+export function AudioRecorder({ onRecorded, className }: AudioRecorderProps) {
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -43,9 +42,6 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
     (stream: MediaStream) => {
       chunksRef.current = []
       const mimeType = pickMimeType()
-      // TODO: MediaRecorder produces the browser's native format (webm/VP9 on Chrome/Android,
-      // mov/mp4 on Safari). Once an upload endpoint exists, normalize to H.264/AAC MP4 server-side
-      // for universal playback, and transcode to HLS for adaptive streaming at scale.
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
       recorderRef.current = recorder
 
@@ -54,7 +50,7 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
       }
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, {
-          type: recorder.mimeType || 'video/webm',
+          type: recorder.mimeType || 'audio/webm',
         })
         chunksRef.current = []
         setStatus('idle')
@@ -82,36 +78,21 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error(
           window.isSecureContext
-            ? 'This browser exposes no camera API.'
-            : 'Camera needs a secure (trusted HTTPS) connection.',
+            ? 'This browser exposes no microphone API.'
+            : 'Microphone needs a secure (trusted HTTPS) connection.',
         )
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          aspectRatio: { ideal: 9 / 16 },
-          width: { ideal: 720 },
-          height: { ideal: 1280 },
-        },
-        audio: true,
-      })
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
-      const video = videoRef.current
-      if (video) {
-        video.setAttribute('playsinline', 'true')
-        video.muted = true
-        video.srcObject = stream
-        await video.play().catch(() => {})
-      }
       beginRecording(stream)
     } catch (err) {
       setStatus('error')
       setError(
         err instanceof DOMException && err.name === 'NotAllowedError'
-          ? 'Camera/microphone permission denied. Allow access and try again.'
+          ? 'Microphone permission denied. Allow access and try again.'
           : err instanceof Error
             ? err.message
-            : 'Could not start the camera on this device.',
+            : 'Could not start the microphone on this device.',
       )
     }
   }, [beginRecording])
@@ -141,26 +122,26 @@ export function VideoRecorder({ onRecorded, className }: VideoRecorderProps) {
 
   return (
     <div className={cn('w-full max-w-sm space-y-3', className)}>
-      <div className="relative aspect-9/16 w-full overflow-hidden rounded-xl bg-black">
-        <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
-        {status === 'idle' && (
-          <div className="absolute inset-0 flex items-center justify-center text-white/70">
-            <Video className="size-10" aria-hidden />
-          </div>
-        )}
+      <div className="flex aspect-square w-full items-center justify-center rounded-xl bg-slate-100">
+        <div
+          className={cn(
+            'flex size-20 items-center justify-center rounded-full bg-white shadow-sm',
+            status === 'recording' && 'ring-4 ring-red-200',
+          )}
+        >
+          <Mic
+            className={cn('size-8', status === 'recording' ? 'text-red-600' : 'text-slate-500')}
+            aria-hidden
+          />
+        </div>
         {status === 'recording' && (
-          <>
-            <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 text-xs font-medium text-white">
-              <Circle className="size-2.5 animate-pulse fill-red-500 text-red-500" aria-hidden />
-              REC
-            </span>
-            <span
-              className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-1 text-xs font-medium tabular-nums text-white"
-              aria-live="polite"
-            >
-              {formatDuration(secondsLeft)}
-            </span>
-          </>
+          <span
+            className="absolute mt-28 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 text-xs font-medium tabular-nums text-white"
+            aria-live="polite"
+          >
+            <Circle className="size-2.5 animate-pulse fill-red-500 text-red-500" aria-hidden />
+            {formatDuration(secondsLeft)}
+          </span>
         )}
       </div>
 

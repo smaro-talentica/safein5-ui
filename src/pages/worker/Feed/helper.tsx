@@ -1,7 +1,7 @@
-import type { StoredVideo, UploadSession } from '@/pages/worker/Capture/model'
+import type { AudioUploadRecord, UploadSession } from '@/pages/worker/Capture/model'
 
-export function sortNewestFirst(videos: StoredVideo[]): StoredVideo[] {
-  return [...videos].sort((a, b) => b.createdAt - a.createdAt)
+export function sortNewestFirst<T extends { createdAt: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => b.createdAt - a.createdAt)
 }
 
 export function formatRecordedAt(timestamp: number): string {
@@ -20,6 +20,21 @@ export function formatUploadStatus(session: UploadSession | undefined): string |
       return 'Upload queued…'
     case 'uploading':
       return `Uploading… ${done}/${session.chunkCount} chunks`
+    case 'error':
+      return 'Upload failed'
+    case 'completed':
+      return null
+  }
+}
+
+export function formatAudioUploadStatus(record: AudioUploadRecord | undefined): string | null {
+  if (!record) return null
+
+  switch (record.status) {
+    case 'pending':
+      return 'Upload queued…'
+    case 'uploading':
+      return 'Uploading…'
     case 'error':
       return 'Upload failed'
     case 'completed':

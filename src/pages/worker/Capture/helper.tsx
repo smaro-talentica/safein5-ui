@@ -1,9 +1,13 @@
 import {
+  AUDIO_STORE_NAME,
+  AUDIO_UPLOAD_RECORDS_STORE_NAME,
+  AUDIO_UPLOAD_RETRY_BASE_DELAY_MS,
   CHUNK_RETRY_BASE_DELAY_MS,
   DB_NAME,
   DB_VERSION,
   MIN_CHUNK_SIZE,
   STORE_NAME,
+  TEXT_ENTRIES_STORE_NAME,
   UPLOAD_SESSIONS_STORE_NAME,
 } from './constant'
 import type { StoredVideo, UploadChunk } from './model'
@@ -22,6 +26,15 @@ export function openVideoDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(UPLOAD_SESSIONS_STORE_NAME)) {
         db.createObjectStore(UPLOAD_SESSIONS_STORE_NAME, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(AUDIO_STORE_NAME)) {
+        db.createObjectStore(AUDIO_STORE_NAME, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(AUDIO_UPLOAD_RECORDS_STORE_NAME)) {
+        db.createObjectStore(AUDIO_UPLOAD_RECORDS_STORE_NAME, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(TEXT_ENTRIES_STORE_NAME)) {
+        db.createObjectStore(TEXT_ENTRIES_STORE_NAME, { keyPath: 'id' })
       }
     }
     request.onsuccess = () => resolve(request.result)
@@ -93,4 +106,16 @@ export function clampChunkSize(requested: number, size: number): number {
 
 export function nextRetryDelay(attempt: number): number {
   return CHUNK_RETRY_BASE_DELAY_MS * 2 ** attempt
+}
+
+export function makeAudioId(size: number): string {
+  return `${Date.now()}-${size}-${Math.round(Math.random() * 1e9)}`
+}
+
+export function nextAudioUploadRetryDelay(attempt: number): number {
+  return AUDIO_UPLOAD_RETRY_BASE_DELAY_MS * 2 ** attempt
+}
+
+export function makeTextEntryId(): string {
+  return `${Date.now()}-${Math.round(Math.random() * 1e9)}`
 }
