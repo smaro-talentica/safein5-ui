@@ -5,7 +5,7 @@ import { VideoUploader } from '@/components/feature/VideoUploader'
 import { AudioUploader } from '@/components/feature/AudioUploader'
 import { TrimRunner } from '@/components/feature/TrimRunner'
 import { RouterProvider, useMatches } from 'react-router-dom'
-import { createBrowserRouter, Outlet } from 'react-router-dom'
+import { createHashRouter, Outlet } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { InstallPromptProvider } from '@/hooks/InstallPromptProvider'
@@ -84,7 +84,7 @@ const notFoundElement = (
   </Suspense>
 )
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: ROUTES.login,
     element: (
