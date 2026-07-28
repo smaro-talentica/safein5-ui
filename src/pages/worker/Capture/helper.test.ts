@@ -3,6 +3,8 @@ import {
   buildChunks,
   clampChunkSize,
   isIndexedDbAvailable,
+  isVideoFile,
+  makeTrimJobId,
   makeVideoId,
   nextRetryDelay,
 } from './helper'
@@ -108,5 +110,38 @@ describe('nextRetryDelay', () => {
     expect(nextRetryDelay(0)).toBe(CHUNK_RETRY_BASE_DELAY_MS)
     expect(nextRetryDelay(1)).toBe(CHUNK_RETRY_BASE_DELAY_MS * 2)
     expect(nextRetryDelay(2)).toBe(CHUNK_RETRY_BASE_DELAY_MS * 4)
+  })
+})
+
+describe('makeTrimJobId', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('joins timestamp, size, and a scaled random into a stable shape', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1000)
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    expect(makeTrimJobId(42)).toBe('1000-42-500000000')
+  })
+
+  it('matches the timestamp-size-random format for arbitrary inputs', () => {
+    expect(makeTrimJobId(0)).toMatch(/^\d+-0-\d+$/)
+    expect(makeTrimJobId(123456)).toMatch(/^\d+-123456-\d+$/)
+  })
+})
+
+describe('isVideoFile', () => {
+  it('accepts files with a video/* MIME type', () => {
+    expect(isVideoFile(new File([], 'clip.mp4', { type: 'video/mp4' }))).toBe(true)
+    expect(isVideoFile(new File([], 'clip.webm', { type: 'video/webm' }))).toBe(true)
+  })
+
+  it('rejects non-video MIME types', () => {
+    expect(isVideoFile(new File([], 'doc.pdf', { type: 'application/pdf' }))).toBe(false)
+    expect(isVideoFile(new File([], 'photo.png', { type: 'image/png' }))).toBe(false)
+  })
+
+  it('rejects a file with no reported MIME type', () => {
+    expect(isVideoFile(new File([], 'unknown', { type: '' }))).toBe(false)
   })
 })

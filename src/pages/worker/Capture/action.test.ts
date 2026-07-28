@@ -1,16 +1,20 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  deleteTrimJob,
   deleteUploadSession,
   deleteVideoFromIndexedDb,
   getUploadSession,
   listPendingUploadSessions,
+  listTrimJobs,
+  queueTrimJob,
+  saveTrimJob,
   saveUploadSession,
   saveVideoToIndexedDb,
 } from './action'
 import { openVideoDb, promisifyRequest } from './helper'
 import { STORE_NAME } from './constant'
-import type { UploadSession } from './model'
+import type { TrimJob, UploadSession } from './model'
 
 function makeSession(overrides: Partial<UploadSession> = {}): UploadSession {
   const now = Date.now()
@@ -151,6 +155,97 @@ describe('upload session CRUD', () => {
       await expect(getUploadSession('x')).resolves.toBeUndefined()
       await expect(deleteUploadSession('x')).resolves.toBeUndefined()
       await expect(listPendingUploadSessions()).resolves.toEqual([])
+    } finally {
+      globalThis.indexedDB = original
+    }
+  })
+})
+
+function makeTrimJob(overrides: Partial<TrimJob> = {}): TrimJob {
+  const now = Date.now()
+  return {
+    id: 'job-1',
+    sourceBlob: new Blob(['source'], { type: 'video/webm' }),
+    name: 'trimmed-1.webm',
+    range: { start: 1, end: 5 },
+    status: 'processing',
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  }
+}
+
+describe('trim job CRUD', () => {
+  beforeEach(() => {
+    indexedDB.deleteDatabase('safein5-videos')
+  })
+
+  it('saves and lists a trim job', async () => {
+    const job = makeTrimJob()
+    await saveTrimJob(job)
+
+    const jobs = await listTrimJobs()
+    expect(jobs).toHaveLength(1)
+    expect(jobs[0].id).toBe(job.id)
+    expect(jobs[0].status).toBe('processing')
+  })
+
+  it('deletes a previously saved trim job', async () => {
+    const job = makeTrimJob()
+    await saveTrimJob(job)
+    expect(await listTrimJobs()).toHaveLength(1)
+
+    await deleteTrimJob(job.id)
+    expect(await listTrimJobs()).toHaveLength(0)
+  })
+
+  it('resolves without error when deleting an unknown trim job id', async () => {
+    await expect(deleteTrimJob('does-not-exist')).resolves.toBeUndefined()
+  })
+
+  it('trim-job helpers are no-ops/empty when IndexedDB is unavailable', async () => {
+    const original = globalThis.indexedDB
+    globalThis.indexedDB = undefined as unknown as IDBFactory
+    try {
+      await expect(saveTrimJob(makeTrimJob())).resolves.toBeUndefined()
+      await expect(deleteTrimJob('x')).resolves.toBeUndefined()
+      await expect(listTrimJobs()).resolves.toEqual([])
+    } finally {
+      globalThis.indexedDB = original
+    }
+  })
+})
+
+describe('queueTrimJob', () => {
+  beforeEach(() => {
+    indexedDB.deleteDatabase('safein5-videos')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('saves a processing trim job carrying the source blob, name, and range', async () => {
+    const sourceBlob = new Blob(['source'], { type: 'video/webm' })
+    const stored = await queueTrimJob(sourceBlob, 'trimmed-1.webm', { start: 2, end: 8 })
+
+    expect(stored.status).toBe('processing')
+    expect(stored.name).toBe('trimmed-1.webm')
+    expect(stored.range).toEqual({ start: 2, end: 8 })
+    expect(stored.id).toMatch(/^\d+-\d+-\d+$/)
+
+    const jobs = await listTrimJobs()
+    expect(jobs).toHaveLength(1)
+    expect(jobs[0].id).toBe(stored.id)
+  })
+
+  it('throws when IndexedDB is unavailable', async () => {
+    const original = globalThis.indexedDB
+    globalThis.indexedDB = undefined as unknown as IDBFactory
+    try {
+      await expect(queueTrimJob(new Blob(['x']), 'x.webm', { start: 0, end: 1 })).rejects.toThrow(
+        'IndexedDB is not available in this browser.',
+      )
     } finally {
       globalThis.indexedDB = original
     }

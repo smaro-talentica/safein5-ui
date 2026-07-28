@@ -8,6 +8,7 @@ import {
   MIN_CHUNK_SIZE,
   STORE_NAME,
   TEXT_ENTRIES_STORE_NAME,
+  TRIM_JOBS_STORE_NAME,
   UPLOAD_SESSIONS_STORE_NAME,
 } from './constant'
 import type { StoredVideo, UploadChunk } from './model'
@@ -35,6 +36,9 @@ export function openVideoDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(TEXT_ENTRIES_STORE_NAME)) {
         db.createObjectStore(TEXT_ENTRIES_STORE_NAME, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(TRIM_JOBS_STORE_NAME)) {
+        db.createObjectStore(TRIM_JOBS_STORE_NAME, { keyPath: 'id' })
       }
     }
     request.onsuccess = () => resolve(request.result)
@@ -118,4 +122,39 @@ export function nextAudioUploadRetryDelay(attempt: number): number {
 
 export function makeTextEntryId(): string {
   return `${Date.now()}-${Math.round(Math.random() * 1e9)}`
+}
+
+export function makeTrimJobId(size: number): string {
+  return `${Date.now()}-${size}-${Math.round(Math.random() * 1e9)}`
+}
+
+/** Accepts only files the browser reports as a video type (MIME sniffed from content/extension). */
+export function isVideoFile(file: File): boolean {
+  return file.type.startsWith('video/')
+}
+
+/**
+ * Reads a video file's duration in seconds by loading it into an off-DOM <video> element.
+ * Rejects if the browser can't decode enough of the file to report metadata (e.g. a
+ * mislabeled or corrupt file that merely has a video/* MIME type).
+ */
+export function readVideoDuration(blob: Blob): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob)
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.src = url
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(url)
+      if (!Number.isFinite(video.duration) || video.duration <= 0) {
+        reject(new Error('Could not read this video file.'))
+        return
+      }
+      resolve(video.duration)
+    }
+    video.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('This file is not a playable video.'))
+    }
+  })
 }

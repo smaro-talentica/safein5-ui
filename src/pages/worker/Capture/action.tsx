@@ -1,5 +1,6 @@
 import { notifyUploadPending } from '@/components/feature/VideoUploader/helper'
 import { notifyAudioUploadPending } from '@/components/feature/AudioUploader/helper'
+import { notifyTrimJobPending } from '@/components/feature/TrimRunner/helper'
 import {
   AUDIO_STORE_NAME,
   AUDIO_UPLOAD_RECORDS_STORE_NAME,
@@ -9,6 +10,7 @@ import {
   MAX_STORED_VIDEOS,
   STORE_NAME,
   TEXT_ENTRIES_STORE_NAME,
+  TRIM_JOBS_STORE_NAME,
   UPLOAD_SESSIONS_STORE_NAME,
 } from './constant'
 import {
@@ -18,6 +20,7 @@ import {
   isIndexedDbAvailable,
   makeAudioId,
   makeTextEntryId,
+  makeTrimJobId,
   makeVideoId,
   openVideoDb,
   pickIdsToEvict,
@@ -28,6 +31,8 @@ import type {
   StoredAudio,
   StoredTextEntry,
   StoredVideo,
+  TrimJob,
+  TrimRange,
   UploadSession,
 } from './model'
 
@@ -359,4 +364,81 @@ export async function deleteTextEntryFromIndexedDb(id: string): Promise<void> {
   } finally {
     db.close()
   }
+}
+
+export async function saveTrimJob(job: TrimJob): Promise<void> {
+  if (!isIndexedDbAvailable()) return
+
+  const db = await openVideoDb()
+  try {
+    const tx = db.transaction(TRIM_JOBS_STORE_NAME, 'readwrite')
+    await promisifyRequest(tx.objectStore(TRIM_JOBS_STORE_NAME).put(job))
+    await awaitTransaction(tx)
+  } finally {
+    db.close()
+  }
+}
+
+export async function deleteTrimJob(id: string): Promise<void> {
+  if (!isIndexedDbAvailable()) return
+
+  const db = await openVideoDb()
+  try {
+    const tx = db.transaction(TRIM_JOBS_STORE_NAME, 'readwrite')
+    await promisifyRequest(tx.objectStore(TRIM_JOBS_STORE_NAME).delete(id))
+    await awaitTransaction(tx)
+  } finally {
+    db.close()
+  }
+}
+
+export async function listTrimJobs(): Promise<TrimJob[]> {
+  if (!isIndexedDbAvailable()) return []
+
+  const db = await openVideoDb()
+  try {
+    const tx = db.transaction(TRIM_JOBS_STORE_NAME, 'readonly')
+    return await promisifyRequest(
+      tx.objectStore(TRIM_JOBS_STORE_NAME).getAll() as IDBRequest<TrimJob[]>,
+    )
+  } finally {
+    db.close()
+  }
+}
+
+/**
+ * Saves a not-yet-trimmed video as a pending `TrimJob` and wakes `TrimRunner` to process it in
+ * the background. Returns immediately (before trimming runs) so the caller (VideoTrimmer's
+ * Upload button) can navigate to Feed right away and show a "Processing…" placeholder.
+ */
+export async function queueTrimJob(
+  sourceBlob: Blob,
+  name: string,
+  range: TrimRange,
+): Promise<TrimJob> {
+  if (!isIndexedDbAvailable()) {
+    throw new Error('IndexedDB is not available in this browser.')
+  }
+
+  // Cloned into a plain Blob rather than storing the caller's File/Blob reference directly: the
+  // trimmer keeps that same object live as a <video> object-URL source for preview/scrubbing
+  // while this is being written to IndexedDB, and writing a File that's still "in use" elsewhere
+  // can fail (observed as a browser-thrown "Failed to write blobs" / InvalidBlob error). A fresh
+  // Blob has no ties to the original File's underlying handle or any active object URL.
+  const clonedBlob = new Blob([sourceBlob], { type: sourceBlob.type })
+
+  const now = Date.now()
+  const job: TrimJob = {
+    id: makeTrimJobId(clonedBlob.size),
+    sourceBlob: clonedBlob,
+    name,
+    range,
+    status: 'processing',
+    createdAt: now,
+    updatedAt: now,
+  }
+  await saveTrimJob(job)
+  notifyTrimJobPending()
+
+  return job
 }

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { VideoRecorder } from '@/components/feature/VideoRecorder'
 import { formatBytes } from '@/components/feature/VideoRecorder/helper'
+import { VideoTrimmer } from '@/components/feature/VideoTrimmer'
 import { AudioRecorder } from '@/components/feature/AudioRecorder'
 import { transcribeAudio } from '@/components/feature/Transcription/action'
 import { cn } from '@/utils/cn'
@@ -9,7 +10,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/AppRoute/constant'
 import { saveAudioAndQueueUpload, saveTextEntry, saveVideoAndQueueUpload } from './action'
-import type { CaptureSection, SelectedVideo, TextMode, VideoMode } from './model'
+import { isVideoFile, readVideoDuration } from './helper'
+import type { CaptureSection, PendingTrim, SelectedVideo, TextMode, VideoMode } from './model'
 
 const SECTIONS = [
   { value: 'video', label: 'Video', icon: Video },
@@ -70,6 +72,7 @@ export function Capture() {
   const [selected, setSelected] = useState<SelectedVideo | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pendingTrim, setPendingTrim] = useState<PendingTrim | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [recordedAudio, setRecordedAudio] = useState<{ blob: Blob; url: string } | null>(null)
@@ -101,6 +104,7 @@ export function Capture() {
       return null
     })
     setError(null)
+    setPendingTrim(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
@@ -115,8 +119,35 @@ export function Capture() {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) setVideo(file, file.name)
+    if (!file) return
+
+    if (!isVideoFile(file)) {
+      setError('Please choose a video file.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    setError(null)
+    readVideoDuration(file)
+      .then((duration) => {
+        setPendingTrim({ blob: file, duration })
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Please choose a video file.')
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      })
   }
+
+  const handleQueued = useCallback(() => {
+    setPendingTrim(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    navigate(ROUTES.feed)
+  }, [navigate])
+
+  const handleCancelTrim = useCallback(() => {
+    setPendingTrim(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [])
 
   const handleRecorded = useCallback(
     (blob: Blob) => {
@@ -234,10 +265,17 @@ export function Capture() {
       {section === 'video' && (
         <div className="flex flex-col gap-4">
           {!selected && (
-            <TabGroup options={VIDEO_MODES} value={videoMode} onChange={setVideoMode} />
+            <TabGroup
+              options={VIDEO_MODES}
+              value={videoMode}
+              onChange={(mode) => {
+                setVideoMode(mode)
+                handleCancelTrim()
+              }}
+            />
           )}
 
-          {!selected && videoMode === 'choose' && (
+          {!selected && videoMode === 'choose' && !pendingTrim && (
             <div className="flex flex-col items-center gap-3">
               <input
                 ref={fileInputRef}
@@ -254,7 +292,22 @@ export function Capture() {
                 <Upload className="size-4" aria-hidden />
                 Choose a video
               </Button>
+              {error && (
+                <p className="w-full rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {error}
+                </p>
+              )}
+              <p className="text-xs text-slate-400">Trim the video before uploading it.</p>
             </div>
+          )}
+
+          {!selected && videoMode === 'choose' && pendingTrim && (
+            <VideoTrimmer
+              file={pendingTrim.blob}
+              duration={pendingTrim.duration}
+              onQueued={handleQueued}
+              onCancel={handleCancelTrim}
+            />
           )}
 
           {!selected && videoMode === 'record' && (

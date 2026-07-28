@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   deleteAudioFromIndexedDb,
   deleteTextEntryFromIndexedDb,
+  deleteTrimJob,
   deleteVideoFromIndexedDb,
   getAudioUploadRecord,
   getUploadSession,
   listAudioFromIndexedDb,
   listTextEntriesFromIndexedDb,
+  listTrimJobs,
   listVideosFromIndexedDb,
 } from '@/pages/worker/Capture/action'
 import { cancelUpload } from '@/components/feature/VideoUploader/helper'
@@ -31,6 +33,10 @@ export const audioUploadRecordQueryKeys = {
 
 export const textEntriesQueryKeys = {
   all: ['text-entries'] as const,
+}
+
+export const trimJobsQueryKeys = {
+  all: ['trim-jobs'] as const,
 }
 
 export function useVideosQuery() {
@@ -129,5 +135,28 @@ export function useDeleteTextEntryMutation() {
   return useMutation({
     mutationFn: (id: string) => deleteTextEntryFromIndexedDb(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: textEntriesQueryKeys.all }),
+  })
+}
+
+/**
+ * Polls while any job is still `processing`: TrimRunner queues a video for background trimming
+ * and then, on success, saves it as a real StoredVideo + upload session and removes the job — so
+ * a job disappearing from this list (with the video now showing up in useVideosQuery) is the
+ * normal, expected transition from "Processing…" to the regular upload-status flow.
+ */
+export function useTrimJobsQuery() {
+  return useQuery({
+    queryKey: trimJobsQueryKeys.all,
+    queryFn: async () => sortNewestFirst(await listTrimJobs()),
+    refetchInterval: (query) =>
+      query.state.data?.some((job) => job.status === 'processing') ? 1500 : false,
+  })
+}
+
+export function useDeleteTrimJobMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteTrimJob(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: trimJobsQueryKeys.all }),
   })
 }

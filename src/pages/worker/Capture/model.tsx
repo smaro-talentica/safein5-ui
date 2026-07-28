@@ -11,6 +11,37 @@ export type SelectedVideo = {
   size: number
 }
 
+export type PendingTrim = {
+  blob: Blob
+  duration: number
+}
+
+export type TrimRange = {
+  start: number
+  end: number
+}
+
+export type TrimJobStatus = 'processing' | 'error'
+
+/**
+ * A queued-but-not-yet-trimmed video: tapping Upload in the trimmer saves one of these
+ * immediately (so Feed can show a "Processing…" placeholder and the app can navigate to Feed
+ * right away) rather than waiting for the — potentially multi-second — re-encode to finish.
+ * `TrimRunner` (mirroring `VideoUploader`'s background-runner pattern) picks these up, runs the
+ * trim, then replaces the job with a real `StoredVideo` + upload session on success.
+ */
+export type TrimJob = {
+  id: string
+  /** The original, untrimmed file the worker picked/recorded. */
+  sourceBlob: Blob
+  name: string
+  range: TrimRange
+  status: TrimJobStatus
+  error?: string
+  createdAt: number
+  updatedAt: number
+}
+
 export type StoredVideo = {
   id: string
   blob: Blob

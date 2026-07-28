@@ -1,7 +1,9 @@
 export const DB_NAME = 'safein5-videos'
-export const DB_VERSION = 4
+export const DB_VERSION = 5
 export const STORE_NAME = 'videos'
 export const MAX_STORED_VIDEOS = 5
+
+export const TRIM_JOBS_STORE_NAME = 'trim-jobs'
 
 export const UPLOAD_SESSIONS_STORE_NAME = 'upload-sessions'
 export const DEFAULT_CHUNK_SIZE = 6 * 1024 * 1024
