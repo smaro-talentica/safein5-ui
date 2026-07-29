@@ -19,6 +19,7 @@ import {
   useDeleteTextEntryMutation,
   useDeleteTrimJobMutation,
   useDeleteVideoMutation,
+  usePlaybackUrlQuery,
   useTextEntriesQuery,
   useTrimJobsQuery,
   useUploadSessionQuery,
@@ -39,11 +40,18 @@ function VideoCard({ video, url }: { video: StoredVideo; url: string }) {
   const uploadStatus = formatUploadStatus(uploadSession)
   const isUploadInProgress =
     uploadSession?.status === 'pending' || uploadSession?.status === 'uploading'
+  const isUploaded = uploadSession?.status === 'completed' && Boolean(uploadSession.sessionId)
+
+  // Once uploaded, poll for the backend's streamable (H.264/+faststart) rendition and play it —
+  // falling back to the local blob as an instant preview until the transcode is ready.
+  const { data: playback } = usePlaybackUrlQuery(uploadSession?.sessionId, isUploaded)
+  const streamableUrl = playback?.url
+  const videoSrc = streamableUrl ?? url
 
   return (
     <div className="space-y-3 rounded-xl border border-slate-200 p-3">
       <div className="overflow-hidden rounded-lg bg-black">
-        <video src={url} controls className="aspect-9/16 w-full object-contain" />
+        <video src={videoSrc} controls className="aspect-9/16 w-full object-contain" />
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
@@ -60,6 +68,11 @@ function VideoCard({ video, url }: { video: StoredVideo; url: string }) {
               }
             >
               {uploadStatus}
+            </p>
+          )}
+          {isUploaded && (
+            <p className={streamableUrl ? 'text-xs text-emerald-600' : 'text-xs text-slate-500'}>
+              {streamableUrl ? 'Streamable ✓ (playing server version)' : 'Preparing streamable video…'}
             </p>
           )}
         </div>

@@ -31,46 +31,46 @@ const mockPresignAndUpload: (audio: StoredAudio) => Promise<AudioPresignResponse
 // Real backend + S3 calls — see docs/BACKEND_AUDIO_UPLOAD_SPEC.md for the endpoint contract this
 // expects. Uncomment once a live backend exists, and flip `uploadToS3` below from
 // `mockPresignAndUpload` to `presignAndUploadToS3`.
-//
-// import { getToken } from '@/auth/store'
-// import { env } from '@/utils/env'
-//
-// async function requestPresignedUrl(audio: StoredAudio): Promise<AudioPresignResponse> {
-//   const response = await fetch(`${env.apiBaseUrl}/audio-clips/presign`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//       Authorization: `Bearer ${getToken()}`,
-//     },
-//     body: JSON.stringify({ filename: audio.name, mime: audio.type, size: audio.size }),
-//   })
-//
-//   if (!response.ok) {
-//     throw new Error(`Presign request failed with status ${response.status}`)
-//   }
-//
-//   return (await response.json()) as AudioPresignResponse
-// }
-//
-// async function presignAndUploadToS3(
-//   audio: StoredAudio,
-//   signal: AbortSignal,
-// ): Promise<AudioPresignResponse> {
-//   const presigned = await requestPresignedUrl(audio)
-//
-//   const response = await fetch(presigned.url, {
-//     method: 'PUT',
-//     headers: { 'Content-Type': audio.type },
-//     body: audio.blob,
-//     signal,
-//   })
-//
-//   if (!response.ok) {
-//     throw new Error(`S3 upload failed with status ${response.status}`)
-//   }
-//
-//   return presigned
-// }
+
+import { getToken } from '@/auth/store'
+import { env } from '@/utils/env'
+
+async function requestPresignedUrl(audio: StoredAudio): Promise<AudioPresignResponse> {
+  const response = await fetch(`${env.apiBaseUrl}/audio-clips/presign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({ filename: audio.name, mime: audio.type, size: audio.size }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Presign request failed with status ${response.status}`)
+  }
+
+  return (await response.json()) as AudioPresignResponse
+}
+
+async function presignAndUploadToS3(
+  audio: StoredAudio,
+  signal: AbortSignal,
+): Promise<AudioPresignResponse> {
+  const presigned = await requestPresignedUrl(audio)
+
+  const response = await fetch(presigned.url, {
+    method: 'PUT',
+    headers: { 'Content-Type': audio.type },
+    body: audio.blob,
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`S3 upload failed with status ${response.status}`)
+  }
+
+  return presigned
+}
 
 const uploadToS3: (audio: StoredAudio, signal: AbortSignal) => Promise<AudioPresignResponse> = (
   audio,
@@ -84,7 +84,7 @@ async function uploadWithRetry(
   for (;;) {
     if (signal.aborted) throw new DOMException('Upload canceled', 'AbortError')
     try {
-      return await uploadToS3(audio, signal)
+      return await presignAndUploadToS3(audio, signal)
     } catch (err) {
       if (signal.aborted || attempt >= MAX_AUDIO_UPLOAD_RETRIES) throw err
       await delay(nextAudioUploadRetryDelay(attempt))

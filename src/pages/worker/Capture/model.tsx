@@ -93,6 +93,16 @@ export type NextChunkResponse =
       videoId: string
     }
 
+/**
+ * Response from `GET /uploads/:sessionId/playback`: a short-lived presigned URL for the
+ * backend's streamable (H.264/AAC +faststart) rendition of the uploaded video — playable on
+ * all browsers/devices, unlike the raw upload. The endpoint 404s until the background transcode
+ * finishes, so the client polls it (see `usePlaybackUrlQuery`).
+ */
+export type PlaybackUrlResponse = {
+  url: string
+}
+
 export type StoredAudio = {
   id: string
   blob: Blob

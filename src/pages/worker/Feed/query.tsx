@@ -12,6 +12,7 @@ import {
   listVideosFromIndexedDb,
 } from '@/pages/worker/Capture/action'
 import { cancelUpload } from '@/components/feature/VideoUploader/helper'
+import { fetchPlaybackUrl } from '@/components/feature/VideoUploader/action'
 import { cancelAudioUpload } from '@/components/feature/AudioUploader/helper'
 import { sortNewestFirst } from './helper'
 
@@ -21,6 +22,10 @@ export const videosQueryKeys = {
 
 export const uploadSessionQueryKeys = {
   byVideoId: (videoId: string) => ['upload-session', videoId] as const,
+}
+
+export const playbackUrlQueryKeys = {
+  byToken: (token: string) => ['playback-url', token] as const,
 }
 
 export const audioClipsQueryKeys = {
@@ -51,6 +56,20 @@ export function useUploadSessionQuery(videoId: string) {
     queryKey: uploadSessionQueryKeys.byVideoId(videoId),
     queryFn: () => getUploadSession(videoId),
     refetchInterval: (query) => (query.state.data?.status === 'uploading' ? 1500 : false),
+  })
+}
+
+/**
+ * Polls `GET /uploads/:token/playback` for a completed upload until the backend has produced the
+ * streamable rendition. The endpoint 404s (fetch returns null) while it's still transcoding, so we
+ * keep polling every 3s and stop once a URL comes back. `token` is the upload's sessionId.
+ */
+export function usePlaybackUrlQuery(token: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: playbackUrlQueryKeys.byToken(token ?? ''),
+    queryFn: () => fetchPlaybackUrl(token as string),
+    enabled: enabled && Boolean(token),
+    refetchInterval: (query) => (query.state.data?.url ? false : 3000),
   })
 }
 
