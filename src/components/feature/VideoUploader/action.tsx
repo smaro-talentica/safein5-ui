@@ -1,4 +1,3 @@
-import { getToken } from '@/auth/store'
 import {
   deleteUploadSession,
   deleteVideoFromIndexedDb,
@@ -6,7 +5,12 @@ import {
 } from '@/pages/worker/Capture/action'
 import { MAX_CHUNK_RETRIES } from '@/pages/worker/Capture/constant'
 import { nextRetryDelay } from '@/pages/worker/Capture/helper'
-import type { NextChunkResponse, StoredVideo, UploadSession } from '@/pages/worker/Capture/model'
+import type {
+  NextChunkResponse,
+  PlaybackUrlResponse,
+  StoredVideo,
+  UploadSession,
+} from '@/pages/worker/Capture/model'
 import { env } from '@/utils/env'
 
 function delay(ms: number): Promise<void> {
@@ -18,7 +22,9 @@ export async function requestNextChunkUrl(payload: object): Promise<NextChunkRes
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
+      // Anonymous for now (the backend upload is optional-auth). To attribute uploads to a
+      // signed-in user, send `Authorization: Bearer <token>` here — and ALSO in fetchPlaybackUrl,
+      // so the backend's owner-scoping matches the SAME identity on read-back.
     },
     body: JSON.stringify(payload),
   })
@@ -28,6 +34,20 @@ export async function requestNextChunkUrl(payload: object): Promise<NextChunkRes
   }
 
   return (await response.json()) as NextChunkResponse
+}
+
+/**
+ * Fetches the presigned URL for the backend's streamable rendition of a completed upload.
+ * Returns null while the endpoint 404s (the background transcode hasn't finished yet), so the
+ * caller can keep polling. `token` is the upload's sessionId. Anonymous, like the upload itself.
+ */
+export async function fetchPlaybackUrl(token: string): Promise<PlaybackUrlResponse | null> {
+  const response = await fetch(`${env.apiBaseUrl}/uploads/${token}/playback`)
+  if (response.status === 404) return null
+  if (!response.ok) {
+    throw new Error(`Playback URL request failed with status ${response.status}`)
+  }
+  return (await response.json()) as PlaybackUrlResponse
 }
 
 export async function uploadChunkToS3(url: string, blob: Blob): Promise<string> {
@@ -109,10 +129,11 @@ export async function runUploadSession(
 
       const chunkResponse = response
       if (chunkResponse.status === 'completed') {
+        // Keep the video + its now-completed session (don't delete): the Feed uses the
+        // retained sessionId as the playback token to fetch the backend's streamable
+        // rendition, and shows the local blob as an instant preview until it's ready.
         current = { ...current, status: 'completed', sessionId: chunkResponse.sessionId }
         await saveUploadSession(current)
-        await deleteUploadSession(current.id)
-        await deleteVideoFromIndexedDb(video.id)
         return
       }
 

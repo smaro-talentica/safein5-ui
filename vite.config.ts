@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import checker from 'vite-plugin-checker'
 import tailwindcss from '@tailwindcss/vite'
@@ -7,7 +8,15 @@ import mkcert from 'vite-plugin-mkcert'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, mode }) => {
+  // Load this mode's env vars. VITE_DEV_API_PROXY (set in .env.development.local)
+  // points the dev server at a remote backend and proxies /api to it — so the
+  // HTTPS dev origin can reach an HTTP backend with no mixed-content block: the
+  // browser only talks to https://localhost, and Vite forwards the call server-side.
+  const env = loadEnv(mode, process.cwd(), '')
+  const apiProxyTarget = env.VITE_DEV_API_PROXY
+
+  return {
   plugins: [
     command === 'serve' ? mkcert() : null,
     react(),
@@ -82,4 +91,19 @@ export default defineConfig(({ command }) => ({
       ],
     },
   },
-}))
+  // Dev-only: forward /api to the remote backend when VITE_DEV_API_PROXY is set,
+  // dodging the mixed-content block from the HTTPS dev origin. secure:false so a
+  // self-signed/HTTP upstream is accepted; changeOrigin rewrites the Host header.
+  server: apiProxyTarget
+    ? {
+        proxy: {
+          '/api': {
+            target: apiProxyTarget,
+            changeOrigin: true,
+            secure: false,
+          },
+        },
+      }
+    : undefined,
+  }
+})

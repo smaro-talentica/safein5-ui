@@ -71,7 +71,7 @@ describe('requestNextChunkUrl', () => {
     vi.restoreAllMocks()
   })
 
-  it('posts to the uploads/next endpoint with an auth header and returns the parsed body', async () => {
+  it('posts to the uploads/next endpoint (anonymous) and returns the parsed body', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
@@ -85,7 +85,7 @@ describe('requestNextChunkUrl', () => {
       'https://api.test/uploads/next',
       expect.objectContaining({
         method: 'POST',
-        headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
       }),
     )
     expect(result).toEqual({ sessionId: 's1', status: 'in_progress', nextChunkNumber: 1, url: 'u' })
@@ -164,11 +164,14 @@ describe('runUploadSession', () => {
     await runUploadSession(video, session, new AbortController().signal)
 
     expect(fetchMock).toHaveBeenCalledTimes(5)
-    expect(deleteUploadSession).toHaveBeenCalledWith('video-1')
-    expect(deleteVideoFromIndexedDb).toHaveBeenCalledWith('video-1')
+    // On completion the video + session are RETAINED (not deleted) so the Feed can play the
+    // backend's streamable rendition; the session keeps its sessionId as the playback token.
+    expect(deleteUploadSession).not.toHaveBeenCalled()
+    expect(deleteVideoFromIndexedDb).not.toHaveBeenCalled()
 
     const finalSave = saveUploadSession.mock.calls.at(-1)?.[0] as UploadSession
     expect(finalSave.status).toBe('completed')
+    expect(finalSave.sessionId).toBe('sess-1')
   })
 
   it('retries a failed chunk upload with backoff before succeeding', async () => {
@@ -206,7 +209,10 @@ describe('runUploadSession', () => {
     await vi.runAllTimersAsync()
     await promise
 
-    expect(deleteVideoFromIndexedDb).toHaveBeenCalledWith('video-1')
+    // Completion retains the video (no delete); the session ends up 'completed'.
+    expect(deleteVideoFromIndexedDb).not.toHaveBeenCalled()
+    const finalSave = saveUploadSession.mock.calls.at(-1)?.[0] as UploadSession
+    expect(finalSave.status).toBe('completed')
   })
 
   it('persists an error status and rethrows after exhausting retries', async () => {
