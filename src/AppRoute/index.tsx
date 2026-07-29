@@ -11,6 +11,7 @@ import { AuthProvider } from '@/auth/AuthProvider'
 import { InstallPromptProvider } from '@/hooks/InstallPromptProvider'
 import { AuthedRedirect, RoleGuard } from './guard'
 import {
+  ALERT_SEGMENT,
   ANALYTICS_SEGMENT,
   CAPTURE_SEGMENT,
   DASHBOARD_SEGMENT,
@@ -39,6 +40,7 @@ const Home = lazy(() => import('@/pages/worker/Home').then((m) => ({ default: m.
 const Feed = lazy(() => import('@/pages/worker/Feed').then((m) => ({ default: m.Feed })))
 const Capture = lazy(() => import('@/pages/worker/Capture').then((m) => ({ default: m.Capture })))
 const Learn = lazy(() => import('@/pages/worker/Learn').then((m) => ({ default: m.Learn })))
+const Alert = lazy(() => import('@/pages/worker/Alert').then((m) => ({ default: m.Alert })))
 const Dashboard = lazy(() =>
   import('@/pages/supervisor/Dashboard').then((m) => ({ default: m.Dashboard })),
 )
@@ -135,6 +137,7 @@ const router = createHashRouter([
           { path: FEED_SEGMENT, element: <Feed /> },
           { path: CAPTURE_SEGMENT, element: <Capture /> },
           { path: LEARN_SEGMENT, element: <Learn /> },
+          { path: ALERT_SEGMENT, element: <Alert /> },
         ],
       },
       {

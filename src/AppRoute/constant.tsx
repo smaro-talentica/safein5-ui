@@ -10,6 +10,7 @@ export const ROUTES = {
   capture: '/capture',
   feed: '/feed',
   learn: '/learn',
+  alert: '/alert',
   profile: '/profile',
   dashboard: '/dashboard',
   signals: '/signals',
@@ -33,6 +34,8 @@ export const CAPTURE_SEGMENT = 'capture'
 export const FEED_SEGMENT = 'feed'
 
 export const LEARN_SEGMENT = 'learn'
+
+export const ALERT_SEGMENT = 'alert'
 
 export const PROFILE_SEGMENT = 'profile'
 

@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bell,
   BookOpen,
   Building2,
   CirclePlus,
@@ -20,6 +21,7 @@ const worker: NavItem[] = [
   { to: ROUTES.feed, label: 'Feed', icon: Rss },
   { to: ROUTES.capture, label: 'Capture', icon: CirclePlus },
   { to: ROUTES.learn, label: 'Learn', icon: BookOpen },
+  { to: ROUTES.alert, label: 'Alert', icon: Bell },
   { to: ROUTES.profile, label: 'Profile', icon: User },
 ]
 
