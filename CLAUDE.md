@@ -8,29 +8,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SafeIn5 UI (package name `fe-safein5`, PWA name "Safe in 5") — a React 19 + TypeScript SPA built with Vite, with installable PWA support. Requires Node `>=24.17.0` and npm `>=11.13.0` (pinned in `.nvmrc` / enforced via `engines`).
 
-### MVP roadmap (approved plan)
-
-The app is a role-gated PWA serving three flows, built in order: **Worker → Supervisor →
-Admin**. Source of truth: the two SafeIn5 spec PDFs; where they conflict, the **"Response to
-Talentica Questions" Q&A doc is newer and wins** (e.g. offline is NOT required; voice memo is the
-primary capture input; PULSE's 4th step is "Shift" not "Steer").
-
-Standing build decisions:
-
-- **UI-only, no data wiring** for now — screens render placeholder data; flows are not yet
-  connected across roles and there is no backend/mock store. Do not build data plumbing until asked.
-- Everything sits **behind a login and is gated by role**; the bottom nav is role-specific.
-- Pages live under `src/pages/<role>/` per the role-partitioning rule below.
-
-Planned routes (not all built yet — add per phase):
-
-- **Shared:** `/login`, `/scan` (+ `/scan/success`, `/scan/fail`), `/qr/:code`, `*` (404).
-- **Worker:** `/home`, `/feed`, `/capture` (+ `/capture/classify`, `/capture/confirm`), `/take5`
-  (+ `/take5/:contextId`), `/learn` (+ `/learn/:moduleId`), `/profile`, `/rescue/:contextId`.
-- **Supervisor:** `/dashboard`, `/signals` (+ `/signals/:id`, `/signals/:id/action`).
-- **Admin:** `/analytics` (+ `/analytics/exposure`), `/tenants` (+ `/tenants/:orgId`),
-  `/learn-admin`.
-
 ## Commands
 
 ```bash
