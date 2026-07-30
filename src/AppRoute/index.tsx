@@ -9,6 +9,7 @@ import { createHashRouter, Outlet } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { InstallPromptProvider } from '@/hooks/InstallPromptProvider'
+import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { AuthedRedirect, RoleGuard } from './guard'
 import {
   ALERT_SEGMENT,
@@ -63,12 +64,22 @@ function PageFallback() {
   )
 }
 
+function DisplayModeBadge() {
+  const { installed } = useInstallPrompt()
+  return (
+    <div className="pointer-events-none fixed right-2 top-2 z-50 rounded-md bg-slate-900/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+      {installed ? 'PWA' : 'BRO'}
+    </div>
+  )
+}
+
 function RootLayout() {
   const matches = useMatches()
   const showNav = shouldShowNav(matches)
 
   return (
     <div className={cn('flex h-dvh flex-col overflow-hidden bg-background')}>
+      <DisplayModeBadge />
       <main className={cn('min-h-0 flex-1 overflow-y-auto')}>
         <Suspense fallback={<PageFallback />}>
           <Outlet />

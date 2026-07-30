@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { InstallPromptContext, type InstallPromptValue } from './installPromptContext'
+import {
+  InstallPromptContext,
+  type InstallPromptBucket,
+  type InstallPromptValue,
+} from './installPromptContext'
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -23,6 +27,16 @@ function isIosDevice(): boolean {
   return iOsDevice || iPadOs
 }
 
+// Every non-Safari iOS browser is required by Apple to run on WebKit, but each still
+// stamps its own stable UA token (Apple-enforced, used so servers can tell them apart).
+// Only these carry an "Add to Home Screen" option in their Safari-equivalent UI; none
+// of the wrappers below expose it, so they need to be told to switch to Safari instead.
+function isIosOtherWebkitBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  return /CriOS|EdgiOS|OPT|FxiOS/.test(ua)
+}
+
 function isAndroidFirefoxBrowser(): boolean {
   if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent
@@ -30,21 +44,13 @@ function isAndroidFirefoxBrowser(): boolean {
 }
 
 // Opera Mobile is Chromium-based but does not reliably fire beforeinstallprompt
-// (reported on Opera's own forums), so it needs the same manual-instructions fallback
-// as Firefox rather than relying on the native prompt.
+// (reported on Opera's own forums). Unlike Firefox, which has no install path at all,
+// Opera IS PWA-capable — so it gets an optimistic Install button with a manual
+// fallback decided at click-time, rather than being told it's unsupported.
 function isAndroidOperaBrowser(): boolean {
   if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent
   return /Android/i.test(ua) && /(OPR\/|Opera)/i.test(ua)
-}
-
-// Edge Android also does not reliably fire beforeinstallprompt (reported on Microsoft's
-// own community/Q&A forums) and its "..." menu install often just creates a shortcut
-// rather than a true install, so it gets the same manual-instructions fallback.
-function isAndroidEdgeBrowser(): boolean {
-  if (typeof navigator === 'undefined') return false
-  const ua = navigator.userAgent
-  return /Android/i.test(ua) && /EdgA/i.test(ua)
 }
 
 export function InstallPromptProvider({ children }: { children: ReactNode }) {
@@ -69,24 +75,28 @@ export function InstallPromptProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const bucket = useMemo<InstallPromptBucket>(() => {
+    if (installed) return 'installed'
+    if (isAndroidFirefoxBrowser()) return 'firefox-android-unsupported'
+    if (isAndroidOperaBrowser()) return 'opera-android'
+    if (isIosDevice()) return isIosOtherWebkitBrowser() ? 'ios-other-webkit' : 'ios-safari'
+    return 'chromium-standard'
+  }, [installed])
+
   const value = useMemo<InstallPromptValue>(
     () => ({
-      canInstall: !installed && deferred !== null,
+      bucket,
       installed,
-      isIos: !installed && isIosDevice(),
-      isAndroidManualInstall:
-        !installed &&
-        deferred === null &&
-        (isAndroidFirefoxBrowser() || isAndroidOperaBrowser() || isAndroidEdgeBrowser()),
+      canInstall: !installed && (bucket === 'chromium-standard' || bucket === 'opera-android'),
       promptInstall: async () => {
-        if (!deferred) return 'unavailable'
+        if (!deferred) return bucket === 'opera-android' ? 'manual-fallback' : 'unavailable'
         await deferred.prompt()
         const { outcome } = await deferred.userChoice
         setDeferred(null)
         return outcome
       },
     }),
-    [installed, deferred],
+    [bucket, installed, deferred],
   )
 
   return <InstallPromptContext.Provider value={value}>{children}</InstallPromptContext.Provider>
