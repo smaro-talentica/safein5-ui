@@ -87,7 +87,9 @@ export function InstallPromptProvider({ children }: { children: ReactNode }) {
     () => ({
       bucket,
       installed,
-      canInstall: !installed && (bucket === 'chromium-standard' || bucket === 'opera-android'),
+      canInstall:
+        !installed &&
+        (bucket === 'opera-android' || (bucket === 'chromium-standard' && deferred !== null)),
       promptInstall: async () => {
         if (!deferred) return bucket === 'opera-android' ? 'manual-fallback' : 'unavailable'
         await deferred.prompt()

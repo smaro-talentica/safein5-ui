@@ -101,6 +101,39 @@ Rules:
 
 Configured via `components.json` (style `default`, base color `slate`, CSS variables, global stylesheet `src/global.css`). Aliases: `ui` → `@/components/ui`, `utils` → `@/utils/cn`. The `hooks` alias maps to `@/hooks`, but no `hooks/` directory exists yet — create it when the first hook is added.
 
+## Auth & API security (target architecture)
+
+`src/auth/` (`store.ts`, `jwt.ts`, `context.ts`, `AuthProvider.tsx`) currently issues a
+self-signed mock JWT against hardcoded `DEMO_ACCOUNTS` and stores it in `localStorage`
+(`safein5-token`) — there is no real backend yet. Every `action.tsx` that calls an endpoint
+already imports `getToken` from `@/auth/store` and has the `Authorization: Bearer ${getToken()}`
+header **commented out** pending a live backend (e.g. `Transcription/action.tsx`,
+`AudioUploader/action.tsx`). This is temporary scaffolding, not the intended end state.
+
+**When a real backend auth flow is wired up, the token must move to an httpOnly cookie, not
+`localStorage`.** Rules for that migration:
+
+- The server sets the session/refresh token via `Set-Cookie` with `httpOnly: true`,
+  `secure: true`, `sameSite: 'strict'` (or `'lax'` if a cross-site redirect flow requires it).
+  The client never reads, writes, or stores the token itself — delete `src/auth/store.ts`'s
+  `localStorage` calls and `getToken`/`setToken`/`clearToken` once this lands.
+- Every `fetch` call in an `action.tsx` that hits the real API must pass
+  `credentials: 'include'` — do **not** re-add a commented-out `Authorization: Bearer ...`
+  header; with httpOnly cookies the browser attaches the token automatically and JS never
+  touches it.
+- If the API is cross-origin (`VITE_API_BASE_URL` on a different domain than the app), the
+  server must echo back the exact origin on `Access-Control-Allow-Origin` (never `*`) plus
+  `Access-Control-Allow-Credentials: true`, or the browser will silently refuse to send/accept
+  the cookie.
+- Logout must be a server round-trip (a call that clears the cookie via `Set-Cookie` with an
+  expired date) — client code cannot delete an httpOnly cookie itself. Update `AuthProvider.tsx`'s
+  `logout()` accordingly instead of just clearing local state.
+- Keep a short-lived access token + longer-lived refresh token pair (both httpOnly) rather than
+  one long-lived token, so expiry is mostly automatic and revocation ("log out all devices") is a
+  server-side operation.
+- Any HTML rendered from API/user content (e.g. future comment/feedback features) must go through
+  DOMPurify before `dangerouslySetInnerHTML` — never render raw untrusted HTML.
+
 ## Conventions
 
 - Prettier formats the codebase (`.prettierrc.json`); run `npm run format` before committing.

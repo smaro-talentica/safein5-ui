@@ -17,93 +17,95 @@ export default defineConfig(({ command, mode }) => {
   const apiProxyTarget = env.VITE_DEV_API_PROXY
 
   return {
-  plugins: [
-    command === 'serve' ? mkcert() : null,
-    react(),
-    tailwindcss(),
-    checker({ typescript: true }),
-    VitePWA({
-      registerType: 'autoUpdate',
-      // Custom SW (src/sw.ts) on top of Workbox precaching, so app-specific
-      // service-worker behavior can be added later.
-      strategies: 'injectManifest',
-      srcDir: 'src',
-      filename: 'sw.ts',
-      includeAssets: ['favicon.svg', 'icons.svg', 'pwa.png', 'pwa-maskable.png'],
-      manifest: {
-        name: 'Safe in 5',
-        short_name: 'Safe in 5',
-        description: 'Safe in 5 PWA',
-        theme_color: '#e0f2fe',
-        background_color: '#e0f2fe',
-        display: 'standalone',
-        scope: '/',
-        start_url: '/',
-        icons: [
-          {
-            src: 'pwa.png',
-            sizes: '192x192 512x512',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: 'pwa-maskable.png',
-            sizes: '1024x1024',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
+    plugins: [
+      command === 'serve' ? mkcert() : null,
+      react(),
+      tailwindcss(),
+      checker({ typescript: true }),
+      VitePWA({
+        registerType: 'autoUpdate',
+        // Custom SW (src/sw.ts) on top of Workbox precaching, so app-specific
+        // service-worker behavior can be added later.
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
+        includeAssets: ['favicon.svg', 'icons.svg', 'pwa.png', 'pwa-maskable.png'],
+        manifest: {
+          name: 'Safe in 5',
+          short_name: 'Safe in 5',
+          description: 'Safe in 5 PWA',
+          theme_color: '#e0f2fe',
+          background_color: '#e0f2fe',
+          display: 'standalone',
+          scope: '/',
+          start_url: '/',
+          icons: [
+            {
+              src: 'pwa.png',
+              sizes: '192x192 512x512',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: 'pwa-maskable.png',
+              sizes: '1024x1024',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+          ],
+        },
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        },
+        // Run the service worker + manifest in `npm run dev` too, so PWA
+        // installability can be tested without a production build. `type: 'module'`
+        // matches our TS service worker. Without this, vite-plugin-pwa disables the
+        // SW in dev and the browser never treats the app as installable.
+        devOptions: {
+          enabled: true,
+          type: 'module',
+        },
+      }),
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./src/vitest.setup.ts'],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'text-summary', 'html', 'json-summary'],
+        reportsDirectory: './coverage',
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: [
+          'src/**/*.test.{ts,tsx}',
+          'src/**/*.spec.{ts,tsx}',
+          'src/**/model.tsx',
+          'src/**/*.d.ts',
+          'src/main.tsx',
+          'src/sw.ts',
+          'src/vite-env.d.ts',
+          'src/vitest.setup.ts',
         ],
       },
-      injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-      },
-      // Run the service worker + manifest in `npm run dev` too, so PWA
-      // installability can be tested without a production build. `type: 'module'`
-      // matches our TS service worker. Without this, vite-plugin-pwa disables the
-      // SW in dev and the browser never treats the app as installable.
-      devOptions: {
-        enabled: true,
-        type: 'module',
-      },
-    }),
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
     },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'text-summary', 'html', 'json-summary'],
-      reportsDirectory: './coverage',
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: [
-        'src/**/*.test.{ts,tsx}',
-        'src/**/*.spec.{ts,tsx}',
-        'src/**/model.tsx',
-        'src/**/*.d.ts',
-        'src/main.tsx',
-        'src/sw.ts',
-        'src/vite-env.d.ts',
-      ],
-    },
-  },
-  // Dev-only: forward /api to the remote backend when VITE_DEV_API_PROXY is set,
-  // dodging the mixed-content block from the HTTPS dev origin. secure:false so a
-  // self-signed/HTTP upstream is accepted; changeOrigin rewrites the Host header.
-  server: apiProxyTarget
-    ? {
-        proxy: {
-          '/api': {
-            target: apiProxyTarget,
-            changeOrigin: true,
-            secure: false,
+    // Dev-only: forward /api to the remote backend when VITE_DEV_API_PROXY is set,
+    // dodging the mixed-content block from the HTTPS dev origin. secure:false so a
+    // self-signed/HTTP upstream is accepted; changeOrigin rewrites the Host header.
+    server: apiProxyTarget
+      ? {
+          proxy: {
+            '/api': {
+              target: apiProxyTarget,
+              changeOrigin: true,
+              secure: false,
+            },
           },
-        },
-      }
-    : undefined,
+        }
+      : undefined,
   }
 })
