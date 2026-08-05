@@ -69,6 +69,7 @@ npm install
 | `npm run lint`        | Run ESLint                                                              |
 | `npm run format`      | Format the codebase with Prettier                                       |
 | `npm test`            | Run unit tests with Vitest (**watch mode**; use `npx vitest run` for a single pass) |
+| `npm run test:e2e`    | Run Playwright end-to-end tests (`e2e/`) against a production build served via `vite preview` |
 
 ## Environments
 
@@ -192,4 +193,5 @@ The `@` alias resolves to `src/`.
 - @vitest/coverage-v8 (unit-test coverage via `npx vitest run --coverage`)
 - jsdom
 - fake-indexeddb (in-memory IndexedDB for unit tests, e.g. Capture's video/upload-session stores)
+- @playwright/test (real-browser end-to-end tests; scaffolding in progress — no `npm run test:e2e` script or `e2e/` specs yet)
 - @testing-library/react + @testing-library/jest-dom (component/hook rendering tests, e.g. `InstallPromptProvider`/`InstallPrompt`; setup in `src/vitest.setup.ts`)

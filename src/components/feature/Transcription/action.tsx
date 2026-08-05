@@ -1,18 +1,8 @@
-import { MOCK_TRANSCRIBE_DELAY_MS, MOCK_TRANSCRIPT } from './constant'
 import type { TranscribeOptions, TranscriptionClient, TranscriptionResult } from './model'
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
-
-/**
- * Mock client used while no STT backend exists. Returns a fixed placeholder transcript after a
- * short delay so the UI's loading/result states can be built and tested end to end.
- */
-// const mockTranscribe: TranscriptionClient['transcribe'] = async () => {
-//   await delay(MOCK_TRANSCRIBE_DELAY_MS)
-//   return { text: MOCK_TRANSCRIPT }
-// }
 
 // Real backend calls — see docs/BACKEND_SPEECH_TO_TEXT_SPEC.md for the endpoint contracts these
 // expect. AWS Transcribe works on audio already sitting in S3 (StartTranscriptionJob), not on
@@ -20,8 +10,6 @@ function delay(ms: number): Promise<void> {
 //   1. Upload the clip to S3 via a presigned URL (same pattern as AudioUploader).
 //   2. Ask the backend to start an AWS Transcribe job against that S3 object.
 //   3. Poll the backend for the job's status until it completes (or fails).
-// Uncomment once VITE_STT_ENDPOINT_URL points at a live service, and flip `activeTranscribe`
-// below from `mockTranscribe` to `remoteTranscribe`.
 //
 // Note: the transcript text itself (once the worker reviews/edits and approves it) is saved
 // locally via `saveTextEntry` in `@/pages/worker/Capture/action` — this module's job is only to
@@ -29,7 +17,8 @@ function delay(ms: number): Promise<void> {
 // source audio anywhere; only the resulting text is kept, per the current local-storage-only
 // scope (see StoredTextEntry's doc comment in `@/pages/worker/Capture/model`).
 //
-import { getToken } from '@/auth/store'
+// `getToken` (`@/auth/store`) is needed again once the Authorization headers below are
+// uncommented for a live backend.
 import { env } from '@/utils/env'
 import type { AudioPresignResponse, TranscriptionJobResponse } from '@/pages/worker/Capture/model'
 import { TRANSCRIPTION_JOB_POLL_INTERVAL_MS, TRANSCRIPTION_JOB_POLL_TIMEOUT_MS } from './constant'

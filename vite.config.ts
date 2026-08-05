@@ -76,6 +76,9 @@ export default defineConfig(({ command, mode }) => {
       globals: true,
       environment: 'jsdom',
       setupFiles: ['./src/vitest.setup.ts'],
+      // Playwright owns e2e/ (its own test/expect globals, run via `npm run test:e2e`) — keep it
+      // out of Vitest's default include glob so the two runners never collide.
+      exclude: ['e2e/**', 'node_modules/**'],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'text-summary', 'html', 'json-summary'],

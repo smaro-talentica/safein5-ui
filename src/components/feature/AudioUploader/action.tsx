@@ -15,24 +15,10 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/**
- * Mock presign used while no backend exists. Unlike the video pipeline (whose real `fetch` to
- * `/uploads/next` simply fails today with no backend listening, leaving the clip local and
- * visible in Feed with an "Upload failed" status), this used to pretend the upload succeeded —
- * which deleted the local IndexedDB copy immediately, with no real S3 object to serve it from,
- * so the clip vanished from Feed. Simulating a failure here instead keeps behavior consistent
- * with video: the clip stays local (and playable in Feed) until a real backend upload succeeds.
- */
-const mockPresignAndUpload: (audio: StoredAudio) => Promise<AudioPresignResponse> = async () => {
-  await delay(600)
-  throw new Error('No audio upload backend is configured yet.')
-}
-
 // Real backend + S3 calls — see docs/BACKEND_AUDIO_UPLOAD_SPEC.md for the endpoint contract this
-// expects. Uncomment once a live backend exists, and flip `uploadToS3` below from
-// `mockPresignAndUpload` to `presignAndUploadToS3`.
+// expects. `getToken` (`@/auth/store`) is needed again once a live backend exists and the
+// Authorization header below is uncommented.
 
-import { getToken } from '@/auth/store'
 import { env } from '@/utils/env'
 
 async function requestPresignedUrl(audio: StoredAudio): Promise<AudioPresignResponse> {
@@ -71,10 +57,6 @@ async function presignAndUploadToS3(
 
   return presigned
 }
-
-const uploadToS3: (audio: StoredAudio, signal: AbortSignal) => Promise<AudioPresignResponse> = (
-  audio,
-) => mockPresignAndUpload(audio)
 
 async function uploadWithRetry(
   audio: StoredAudio,

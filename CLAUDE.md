@@ -21,11 +21,16 @@ npm run lint         # eslint .
 npm run format       # prettier --write .
 npm test             # vitest (watch mode)
 npm run preview      # serve last production build
+npm run test:e2e     # playwright, real-browser smoke test (builds + serves via vite preview)
 ```
 
 - **Single test:** `npx vitest run src/utils.test.ts` (or `npx vitest run -t "<test name>"`). `npm test` runs Vitest in watch mode.
 - **Type-checking** also runs live in the dev server via `vite-plugin-checker`, and `tsc -b` gates every build.
 - The dev server runs over **HTTPS** in all modes (`@vitejs/plugin-basic-ssl`, applied only on `command === 'serve'`).
+- **End-to-end tests** live in `e2e/` (Playwright, not Vitest — kept separate via `test.exclude` in
+  `vite.config.ts`) and run with `npm run test:e2e`. Currently scaffolding only: one smoke spec
+  (`e2e/app-shell.spec.ts`) against a production build served via `vite preview`. Not wired into
+  CI yet.
 
 ## Environments
 

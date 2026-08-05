@@ -13,6 +13,12 @@ dist-ssr
 coverage
 *.local
 
+# Playwright
+/playwright-report/
+/e2e-results/
+/blob-report/
+/test-results/
+
 # Claude Code: share hooks + settings with the team, but keep personal /
 # machine-local artifacts out of git.
 .claude/*
