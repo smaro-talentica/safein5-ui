@@ -139,3 +139,15 @@ header **commented out** pending a live backend (e.g. `Transcription/action.tsx`
 - Prettier formats the codebase (`.prettierrc.json`); run `npm run format` before committing.
 - ESLint flat config (`eslint.config.js`) extends recommended JS/TS + react-hooks + react-refresh, with `eslint-config-prettier` last. Custom rules: 2-space `indent` and `no-tabs` are **errors**.
 - Tailwind CSS v4 is wired through the `@tailwindcss/vite` plugin (no `tailwind.config.js`).
+
+## Code navigation
+
+- Prefer LSP-based navigation (go-to-definition, find-references, rename-symbol) over
+  text/semantic search whenever an LSP tool is available in the session — it resolves
+  TypeScript's actual symbol graph (imports, re-exports, generics, the `@` alias) instead of
+  guessing from text patterns, so results are exact instead of approximate.
+- Fall back to `Grep`/`Glob` only when no LSP tool is available, or for the cases LSP doesn't
+  cover well: literal string/config search, cross-file naming-convention audits, or finding files
+  by path pattern rather than by symbol.
+- Don't reach for a semantic-search/explore agent to answer a question an LSP jump-to-definition
+  or find-references call would answer directly and more precisely.

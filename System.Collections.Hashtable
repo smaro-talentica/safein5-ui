@@ -1,0 +1,76 @@
+﻿{
+    "hooks":  {
+                  "PreToolUse":  [
+                                     {
+                                         "hooks":  [
+                                                       {
+                                                           "command":  "node ~/.claude/hooks/lsp-first-guard.js",
+                                                           "type":  "command"
+                                                       }
+                                                   ],
+                                         "matcher":  "Grep"
+                                     },
+                                     {
+                                         "hooks":  [
+                                                       {
+                                                           "command":  "node ~/.claude/hooks/lsp-first-glob-guard.js",
+                                                           "type":  "command"
+                                                       }
+                                                   ],
+                                         "matcher":  "Glob"
+                                     },
+                                     {
+                                         "hooks":  [
+                                                       {
+                                                           "command":  "node ~/.claude/hooks/bash-grep-block.js",
+                                                           "type":  "command"
+                                                       }
+                                                   ],
+                                         "matcher":  "Bash"
+                                     },
+                                     {
+                                         "hooks":  [
+                                                       {
+                                                           "command":  "node ~/.claude/hooks/lsp-first-read-guard.js",
+                                                           "type":  "command"
+                                                       }
+                                                   ],
+                                         "matcher":  "Read"
+                                     },
+                                     {
+                                         "hooks":  [
+                                                       {
+                                                           "command":  "node ~/.claude/hooks/lsp-pre-delegation.js",
+                                                           "type":  "command"
+                                                       }
+                                                   ],
+                                         "matcher":  "Agent"
+                                     }
+                                 ],
+                  "SessionStart":  [
+                                       {
+                                           "hooks":  [
+                                                         {
+                                                             "command":  "node ~/.claude/hooks/lsp-session-reset.js",
+                                                             "type":  "command"
+                                                         }
+                                                     ],
+                                           "matcher":  "true"
+                                       }
+                                   ],
+                  "PostToolUse":  [
+                                      {
+                                          "hooks":  [
+                                                        {
+                                                            "command":  "node ~/.claude/hooks/lsp-usage-tracker.js",
+                                                            "type":  "command"
+                                                        }
+                                                    ],
+                                          "matcher":  "mcp__cclsp__find_definition|mcp__cclsp__find_references|mcp__cclsp__find_workspace_symbols|mcp__cclsp__find_implementation|mcp__cclsp__get_hover|mcp__cclsp__get_diagnostics|mcp__cclsp__get_incoming_calls|mcp__cclsp__get_outgoing_calls"
+                                      }
+                                  ]
+              },
+    "enabledPlugins":  {
+                           "typescript-lsp@claude-plugins-official":  true
+                       }
+}
