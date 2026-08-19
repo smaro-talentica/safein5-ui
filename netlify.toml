@@ -1,0 +1,16 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Browser → https://your-site/api/... → Netlify → EC2 (server-side)
+[[redirects]]
+  from = "/api/*"
+  to = "http://ec2-44-222-219-21.compute-1.amazonaws.com:3000/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback (must be last)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
