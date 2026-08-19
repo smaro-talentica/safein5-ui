@@ -5,7 +5,7 @@ A React + TypeScript single-page app built with Vite, with PWA support.
 ## Features
 
 - **Auth & role-based routing** — the app is gated by a login and partitioned into three roles: **worker**, **supervisor**, **admin**.
-  - **`/login`** — sign-in page (`Login`, `src/pages/shared/Login/`) with three fixed demo accounts (`worker@demo` / `supervisor@demo` / `admin@demo`, password `demo`). On sign-in it mints an unsigned (`alg: none`) JWT carrying **role + multi-tenant claims** (org + site) and stores it in `localStorage`; the current user, role, and tenant/site are derived by decoding that token (`src/auth/`, `useAuth` hook). There is no backend — this mirrors a real JWT flow locally. After a successful sign-in it returns to the route the user originally tried to reach (e.g. a QR deep link) if one is present, otherwise it lands on the signed-in role's home.
+  - **`/login`** — sign-in page (`Login`, `src/pages/shared/Login/`) with three fixed demo accounts (`worker@demo` / `supervisor@demo` / `admin@demo`, password `demo`). On sign-in it mints an unsigned (`alg: none`) JWT carrying **role + multi-tenant claims** (org + site) and stores it in `localStorage`; the current user, role, and tenant/site are derived by decoding that token (`src/auth/`, `useAuth` hook). There is no backend — this mirrors a real JWT flow locally. After a successful sign-in it returns to the route the user originally tried to reach (e.g. a QR deep link) if one is present, otherwise it lands on the signed-in role's home. The page also shows a **build stamp** at the bottom (`BuildStamp`, `src/components/ui/build-stamp/`) — app version, short commit SHA, and build time — so anyone can confirm at a glance which build a deployed environment is actually running (see **Build stamp** below).
   - **Route guards** (`src/AppRoute/guard.tsx`): unauthenticated users are redirected to `/login`, carrying the originally-requested path in router state (`LoginLocationState`, `src/AppRoute/model.tsx`) so `Login` can send them back there post sign-in; a user visiting a route outside their role is redirected to their own home. **`/`** redirects to the logged-in role's home — worker → `/home`, supervisor → `/dashboard`, admin → `/analytics`.
   - **Routing is hash-based** (`createHashRouter`, `src/AppRoute/index.tsx`) — every in-app URL is prefixed with `#` (e.g. `/#/home`, `/#/scan/success`); route paths are written without the `#` throughout this doc for readability. This was chosen so route resolution never depends on server-side rewrite rules, which matters for static hosting and for a possible future Capacitor-wrapped build (see `docs/CAPACITOR_WRAPPING_NOTES.md`).
   - The **bottom navigation bar** (`BottomNav`, `src/components/ui/bottom-nav/`) is **role-driven** (`navItemsByRole`): workers see **Home, Scan, Feed, Capture, Location, Alert, Profile**; supervisors see **Dashboard, Signals, Profile**; admins see **Analytics, Tenants, Profile**. Nav visibility is also **per-route**: a route hides the bar by setting `handle: { hideNav: true }` in the router config, which `RootLayout` reads via `useMatches()` (e.g. `/login` and the `/scan` result screens hide it).
@@ -136,7 +136,7 @@ src/
 ├── sw.ts            Custom service worker (app-shell precache)
 ├── main.tsx         App entry point
 ├── global.css       Global styles
-└── vite-env.d.ts    Vite/PWA + env type declarations
+└── vite-env.d.ts    Vite/PWA + env type declarations, plus the injected build-time constants (`__APP_VERSION__`, `__APP_COMMIT__`, `__APP_BUILD_TIME__`)
 ```
 
 The `@` alias resolves to `src/`.
@@ -145,6 +145,24 @@ The `@` alias resolves to `src/`.
 
 - **`components/ui/`** — purely presentational, reusable building blocks. Styling only, **no business logic** or state (buttons, inputs, cards, etc.). This is where shadcn/ui components live.
 - **`components/feature/`** — reusable components that combine **styling and logic** (data fetching, state, behavior) for a specific feature.
+
+## Build stamp
+
+The login screen renders the running build's identity (`BuildStamp`, `src/components/ui/build-stamp/`) so you can tell whether a deploy actually landed without digging through hosting logs:
+
+```
+v0.1.0 · f68e4e4 · Aug 19, 2026, 03:03 PM
+```
+
+The three values are injected at build time via Vite's `define` (`vite.config.ts`) and declared as globals in `src/vite-env.d.ts`:
+
+| Constant | Source |
+| -------- | ------ |
+| `__APP_VERSION__` | The `version` field in `package.json` |
+| `__APP_COMMIT__` | Short (7-char) commit SHA — from `COMMIT_REF` when the host provides it (Netlify sets this automatically), else `git rev-parse --short HEAD`, else `unknown` |
+| `__APP_BUILD_TIME__` | ISO timestamp of when the bundle was built, rendered in the viewer's local timezone |
+
+The **commit SHA is the meaningful one** for answering "is the latest version deployed?" — `package.json`'s version only changes when someone bumps it by hand, so two different deploys can share a version, whereas the SHA changes with every commit and can be matched against `git log`. These are compile-time substitutions, not runtime env vars, so they cost nothing at runtime and need no `VITE_` variable.
 
 ## Technologies
 

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { InstallPrompt } from '@/components/feature/InstallPrompt'
+import { BuildStamp } from '@/components/ui/build-stamp'
 import { useAuth } from '@/hooks/useAuth'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -81,6 +82,8 @@ export function Login() {
       </div>
 
       <InstallPrompt />
+
+      <BuildStamp />
     </div>
   )
 }

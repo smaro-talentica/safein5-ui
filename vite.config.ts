@@ -6,6 +6,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import mkcert from 'vite-plugin-mkcert'
 import path from 'path'
+import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -15,6 +17,29 @@ export default defineConfig(({ command, mode }) => {
   // browser only talks to https://localhost, and Vite forwards the call server-side.
   const env = loadEnv(mode, process.cwd(), '')
   const apiProxyTarget = env.VITE_DEV_API_PROXY
+
+  // Build stamp shown on the login screen, so anyone can tell at a glance which build
+  // is live. The commit SHA is the part that matters: package.json's version only moves
+  // when a human bumps it, whereas the SHA changes on every deploy. On Netlify,
+  // COMMIT_REF is injected by the build environment; locally we fall back to asking
+  // git, and to 'unknown' when neither works (e.g. building from a tarball with no
+  // .git directory).
+  const commitSha = (
+    env.COMMIT_REF ||
+    (() => {
+      try {
+        return execSync('git rev-parse --short HEAD', {
+          stdio: ['ignore', 'pipe', 'ignore'],
+        })
+          .toString()
+          .trim()
+      } catch {
+        return ''
+      }
+    })()
+  ).slice(0, 7)
+  const pkgVersion = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8'))
+    .version as string
 
   return {
     plugins: [
@@ -83,6 +108,14 @@ export default defineConfig(({ command, mode }) => {
         },
       }),
     ],
+    // Compile-time constants (declared in src/vite-env.d.ts). JSON.stringify is
+    // required — `define` is a raw text substitution, so a bare string would be
+    // injected as an identifier rather than a string literal.
+    define: {
+      __APP_VERSION__: JSON.stringify(pkgVersion),
+      __APP_COMMIT__: JSON.stringify(commitSha || 'unknown'),
+      __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
