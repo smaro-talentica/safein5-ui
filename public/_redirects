@@ -1,0 +1,8 @@
+# Kept in sync with netlify.toml. This file is copied verbatim into dist/ by Vite,
+# so the rules survive a manual folder deploy (netlify.toml is NOT copied into dist/).
+
+# Browser → https://your-site/api/... → Netlify → EC2 (server-side)
+/api/*  http://ec2-44-222-219-21.compute-1.amazonaws.com:3000/api/:splat  200!
+
+# SPA fallback (must be last)
+/*      /index.html  200
