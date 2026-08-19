@@ -30,7 +30,7 @@ export function Login() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 p-6">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">SafeIn5</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Demo App</h1>
         <p className="text-sm text-slate-500">Sign in to continue</p>
       </div>
 

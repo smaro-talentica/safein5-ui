@@ -29,20 +29,36 @@ export default defineConfig(({ command, mode }) => {
         strategies: 'injectManifest',
         srcDir: 'src',
         filename: 'sw.ts',
-        includeAssets: ['favicon.svg', 'icons.svg', 'pwa.png', 'pwa-maskable.png'],
+        includeAssets: [
+          'favicon.svg',
+          'icons.svg',
+          'pwa-192.png',
+          'pwa-512.png',
+          'pwa-maskable.png',
+        ],
         manifest: {
-          name: 'Safe in 5',
-          short_name: 'Safe in 5',
-          description: 'Safe in 5 PWA',
+          name: 'Demo App',
+          short_name: 'Demo App',
+          description: 'Demo App PWA',
           theme_color: '#e0f2fe',
           background_color: '#e0f2fe',
           display: 'standalone',
           scope: '/',
           start_url: '/',
+          // Each PNG must declare its OWN real pixel size. A single file listed as
+          // "192x192 512x512" (valid only for multi-resolution .ico) is rejected by
+          // Chrome when the decoded bitmap doesn't match, which fails the
+          // installability check and downgrades the install to a browser shortcut.
           icons: [
             {
-              src: 'pwa.png',
-              sizes: '192x192 512x512',
+              src: 'pwa-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: 'pwa-512.png',
+              sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
             },

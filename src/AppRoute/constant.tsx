@@ -9,7 +9,7 @@ export const ROUTES = {
   scanFail: '/scan/fail',
   capture: '/capture',
   feed: '/feed',
-  learn: '/learn',
+  location: '/location',
   alert: '/alert',
   profile: '/profile',
   dashboard: '/dashboard',
@@ -33,7 +33,7 @@ export const CAPTURE_SEGMENT = 'capture'
 
 export const FEED_SEGMENT = 'feed'
 
-export const LEARN_SEGMENT = 'learn'
+export const LOCATION_SEGMENT = 'location'
 
 export const ALERT_SEGMENT = 'alert'
 

@@ -11,7 +11,7 @@ test('app shell renders and the root route loads', async ({ page }) => {
   await page.goto('/')
 
   await expect(page).toHaveURL(/#\/login$/)
-  await expect(page.getByRole('heading', { name: 'SafeIn5' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Demo App' })).toBeVisible()
   await expect(page.getByText('Sign in to continue')).toBeVisible()
 
   expect(pageErrors).toEqual([])

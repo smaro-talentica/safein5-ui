@@ -10,7 +10,7 @@ import {
 } from './helper'
 import type { AlertDiagnostics } from './model'
 
-const NOTIFICATION_ICON = '/pwa.png'
+const NOTIFICATION_ICON = '/pwa-192.png'
 
 function initialDiagnostics(): AlertDiagnostics {
   const supported = isNotificationSupported()
@@ -44,7 +44,7 @@ export function Alert() {
     if (!runningRef.current) return
     try {
       const registration = await waitForServiceWorkerReady()
-      await registration.showNotification('Safe in 5 — Test Alert', {
+      await registration.showNotification('Demo App — Test Alert', {
         body: 'This is a test notification fired by the Alert page.',
         icon: NOTIFICATION_ICON,
         tag: createFireTag(),

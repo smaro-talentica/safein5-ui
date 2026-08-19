@@ -117,6 +117,6 @@ describe('InstallPrompt', () => {
     render(<InstallPrompt />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
-    expect(screen.queryByText('Install Safe in 5')).not.toBeInTheDocument()
+    expect(screen.queryByText('Install Demo App')).not.toBeInTheDocument()
   })
 })

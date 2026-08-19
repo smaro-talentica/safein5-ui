@@ -1,11 +1,11 @@
 import {
   BarChart3,
   Bell,
-  BookOpen,
   Building2,
   CirclePlus,
   Home,
   LayoutDashboard,
+  MapPin,
   Rss,
   ScanQrCode,
   Siren,
@@ -20,7 +20,7 @@ const worker: NavItem[] = [
   { to: ROUTES.scan, label: 'Scan', icon: ScanQrCode },
   { to: ROUTES.feed, label: 'Feed', icon: Rss },
   { to: ROUTES.capture, label: 'Capture', icon: CirclePlus },
-  { to: ROUTES.learn, label: 'Learn', icon: BookOpen },
+  { to: ROUTES.location, label: 'Location', icon: MapPin },
   { to: ROUTES.alert, label: 'Alert', icon: Bell },
   { to: ROUTES.profile, label: 'Profile', icon: User },
 ]

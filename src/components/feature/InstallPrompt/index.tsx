@@ -34,7 +34,7 @@ export function InstallPrompt({ className }: { className?: string }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-slate-800">Install Safe in 5</p>
+          <p className="text-sm font-medium text-slate-800">Install Demo App</p>
           {bucket === 'firefox-android-unsupported' ? (
             <p className="text-xs text-slate-500">No PWA Support in this browser.</p>
           ) : bucket === 'ios-other-webkit' ? (
